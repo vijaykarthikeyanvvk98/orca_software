@@ -1,0 +1,52 @@
+<RCC>
+    <qresource prefix="/resources">
+        <file>main.qml</file>
+        <file>images/0%.png</file>
+        <file>images/25%.png</file>
+        <file>images/50%.png</file>
+        <file>images/75%.png</file>
+        <file>images/100%.png</file>
+        <file>images/button.png</file>
+        <file>images/close.jpg</file>
+        <file>images/close_2.png</file>
+        <file>images/close_3.png</file>
+        <file>images/CME-Logo.jpg</file>
+        <file>images/CME-Logo.png</file>
+        <file>images/compass - Copy.png</file>
+        <file>images/compass.png</file>
+        <file>images/compass-needle.png</file>
+        <file>images/connect.png</file>
+        <file>images/connected.png</file>
+        <file>images/connected.svg</file>
+        <file>images/crossHair.png</file>
+        <file>images/crossHair.svg</file>
+        <file>images/depth.png</file>
+        <file>images/down_button.svg</file>
+        <file>images/dummy_image_template.jpg</file>
+        <file>images/dummy_template.jpg</file>
+        <file>images/dummy_template3.jpg</file>
+        <file>images/gps_off.png</file>
+        <file>images/gps_on.png</file>
+        <file>images/location.png</file>
+        <file>images/location_2 .png</file>
+        <file>images/location_3.png</file>
+        <file>images/logo2.png</file>
+        <file>images/marine.jpg</file>
+        <file>images/open.jpg</file>
+        <file>images/piston.png</file>
+        <file>images/pressure.png</file>
+        <file>images/rover.png</file>
+        <file>images/screenshot.png</file>
+        <file>images/screenshot2.png</file>
+        <file>images/screenshot3.png</file>
+        <file>images/settings.png</file>
+        <file>images/temperature.png</file>
+        <file>images/up_button_red.svg</file>
+        <file>images/upbutton.svg</file>
+        <file>images/video_hide.png</file>
+        <file>images/video_show.png</file>
+        <file>images/vikra.png</file>
+        <file>images/vikra_2.jpeg</file>
+        <file>images/vikra_2.png</file>
+    </qresource>
+</RCC>
