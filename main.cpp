@@ -1,4 +1,4 @@
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include "opencvimageprovider.h"
 #include "joystickcontroller.h"
@@ -6,10 +6,12 @@
 #include "link.h"
 #include "receiver.h"
 #include <QQmlContext>
+#include <QWindow>
 #include <QFile>
+#include "qicon.h"
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     QQmlApplicationEngine engine;
 
@@ -35,6 +37,14 @@ int main(int argc, char *argv[])
 
     //QFile f("qrc:/resources/main.qml");
     //qDebug() << "Exists?" << f.exists();  // Should print true
-
+    QObject *rootObject = engine.rootObjects().first();
+    QWindow *window = qobject_cast<QWindow *>(rootObject);
+    const QIcon icon = QIcon(":/resources/images/vikra_2.jpeg");
+    if (window) {
+        window->setIcon(icon);
+        //window->setTitle("VIKRA ACV control station");
+        window->showMaximized();
+        window->setMinimumSize(QSize(670, 470));
+    }
     return app.exec();
 }

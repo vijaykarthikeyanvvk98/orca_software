@@ -1,20 +1,51 @@
 import QtQuick 2.15
+import QtQuick.Shapes
+
 import Qt.labs.platform 1.1
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import Qt5Compat.GraphicalEffects
 import QtQuick.Effects
 import QtQuick.Window 2.15
 import QtQuick.Controls.Material 2.15
 ApplicationWindow {
     id: root
     visible: true
-    background: Rectangle
+    color: "#011026"
+    /*background: Rectangle
     {
        anchors.fill: parent
+       color:"#011026"
+    }*/
+
+
+    Connections{
+        target: link;
+        function onErrordetected()
+        {
+            err_data = link.errorcatched()
+            err_device = err_data[0];
+            error_type = err_data[1];
+            error_text = err_device+error_type;
+
+            console.log("Error Data:", err_data)
+                    console.log("Device:", err_device)
+                    console.log("Error Type:", error_type)
+                    console.log("Error Text:", error_text)
+        }
+
     }
     signal map_image_Captured
     property string vid_path: ""
-    property real y6: 0.0
+    property var err_data: [];
+    property var help_text_Array: []
+    property int err_device:0;
+    property int error_type:0;
+    property string error_text:"";
+    property string err_text:"";
+    property string err_warning_path:"";
+
+    property real y6:link ? link.pitch_deg: 0.0
     property bool edit_not: false
     property color neonblue: "#00FFFF"
     property color neonGreen: "#39FF14"
@@ -22,11 +53,11 @@ ApplicationWindow {
     property int speed_min: 1000
     property int speed_max: 2000
     property real pitch: 0.0
-    property string yaw: "0.0\u00B0"
-    property real roll: 0.0
-    property string temp: "0.0\u00B0C"
+    property real yaw:link ? link.yaw_deg :0.0// "0.0\u00B0"
+    property real roll:link ?link.roll_deg: 0.0
+    property real temp: link ? link.temperature_C : 0.0
     property string press: "0 (mbar)"
-    property string depth: "0(m)"
+    property real depth: link ?link.depth_m:0.0
     property string voltage: "0.0 V(0%)"
     property string battery: ''
     property var modeEnabled: [true, true, true, true]
@@ -165,8 +196,6 @@ ApplicationWindow {
                     title:"Application Settings"
                 Menu{
                     title:"Camera Settigs"
-
-                   // onTriggered: info_window.open()
                     Action {
                                text: "Web Camera"
                                onTriggered: {
@@ -192,7 +221,6 @@ ApplicationWindow {
                         implicitWidth: 180
                         implicitHeight: 35
                         opacity: enabled ? 1 : 0.3
-                        //color: menuItem4.highlighted ? "black" :"#011026"// current_theme_color2 //"#011026"
                     }
                 }
                 background: Rectangle {
@@ -256,13 +284,6 @@ ApplicationWindow {
 
                         contentItem: Text {
                             text: menuItem6.text
-                            //font.family: font_family
-                            //font.bold: bold_not
-                            //font.italic: italic_not
-                            //font.underline: underline_not
-                            //font.strikeout: strike_out_not
-                            //font.pixelSize: font_size // "Palatino Linotype"                    //opacity: enabled ? 1.0 : 0.3
-                            //color: menuItem6.highlighted ? "#ffffff" : "black"
                             horizontalAlignment: Text.AlignLeft
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -287,9 +308,9 @@ ApplicationWindow {
                         text: menuItem5.text
                         //font.family: font_family
                         ///font.bold: bold_not
-                        //font.italic: italic_not
-                        //font.underline: underline_not
-                        //font.strikeout: strike_out_not
+                        font.italic: false
+                        font.underline: false
+                        font.strikeout: false
                         //font.pixelSize: font_size // "Palatino Linotype"                    //opacity: enabled ? 1.0 : 0.3
                         //color: menuItem5.highlighted ? "#ffffff" : "black"
                         horizontalAlignment: Text.AlignLeft
@@ -308,7 +329,7 @@ ApplicationWindow {
                     implicitHeight: 40
                     //color: current_theme_color2 //"#ffffff"
                     //border.color: "blue"
-                    //radius: curvy_edge // 5
+                    //radius: 0.005*root.width // 5
                 }
             }
             delegate: MenuBarItem {
@@ -318,9 +339,9 @@ ApplicationWindow {
                     text: menuBarItem.text
                     //font.family: font_family
                     //font.bold: bold_not
-                    //font.italic: italic_not
-                    //font.underline: underline_not
-                    //font.strikeout: strike_out_not
+                    //font.italic: false
+                    //font.underline: false
+                    //font.strikeout: false
                     //font.pixelSize: font_size // "Palatino Linotype"
                     //opacity: enabled ? 1.0 : 0.3
                     //color: menuBarItem.highlighted ? "black" : "white"
@@ -344,7 +365,7 @@ ApplicationWindow {
             }
 
             Component.onCompleted: {
-                menu_height = menuBar.height
+                //menu_height = menuBar.height
             }
         }
     Dialog {
@@ -444,12 +465,14 @@ ApplicationWindow {
     Component.onCompleted: {
         //VideoStreamer.openVideoCamera( "rtsp://admin:Vikra@123@192.168.56.50:554/video/live?channel=1&subtype=0");
         opencvImage.visible = true
-        fileModel.append({
+        /*fileModel.append({
                              "fileName": "C:/Users/Vijay/Documents/rough.txt"
-                         })
-        logFileDir = myLink.create_directory2(0)
-        logFileDir2 = myLink.create_directory2(1)
-        logFileDir3 = myLink.create_directory2(2)
+                         })*/
+        //logFileDir = myLink.create_directory2(0)
+        //logFileDir2 = myLink.create_directory2(1)
+        //logFileDir3 = myLink.create_directory2(2)
+        help_text_Array = ["🛈 Help:\n\n-User Interface not Responding.\n- Data Update Issue.\n- Software Appearance.\n- Check Logs.\n- Use 'Debug Terminal' for developer logs.\n- Tutorial.\n\nFor detailed instructions, refer to the User Manual."]
+
     }
     Connections {
         target: liveImageProvider
@@ -461,17 +484,9 @@ ApplicationWindow {
     Connections {
         target: VideoStreamer
 
-        function onDepth_enabled() {
-
-            depth_set_not = true
-        }
-        function onDepth_resetted() {
-
-            depth_set_not = false
-        }
-        function onWrite_finished() {
+        /*function onWrite_finished() {
             VideoStreamer.increment_counter()
-        }
+        }*/
     }
     Rectangle {
         id: imageRect
@@ -479,12 +494,10 @@ ApplicationWindow {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        width: parent.width * 0.8
-        height: 0.95*parent.height
-        anchors.margins: 0.005 * parent.width
-        color: "black"
+        anchors.margins: 0.005 * root.width
+        color: "transparent"
         border.color: "white"
-        border.width: 3
+        border.width: 0.0025*root.width
         visible: true
         Image {
             id: opencvImage
@@ -505,7 +518,7 @@ ApplicationWindow {
             }
         }
 }
-Connections {
+/*Connections {
         target: loader4.item
 
         function onMsl_value_changed() {
@@ -513,8 +526,8 @@ Connections {
 
             VideoStreamer.change_cam(value)
         }
-    }
-    Dialog {
+    }*/
+    /*Dialog {
         id: message_template
         z: 2
         x: parent.width / 2.25
@@ -629,7 +642,7 @@ Connections {
         onRejected: {
             message_template.close()
         }
-    }
+    }*/
 
     function connect_stats(string) {
         clear_status()
@@ -655,7 +668,7 @@ Connections {
         connect_pop_status = false
     }
 
-    Dialog {
+    /*Dialog {
         id: message_template2
         z: 2
         x: parent.width / 2.25
@@ -724,9 +737,9 @@ Connections {
         onAccepted: {
             message_template2.close()
         }
-    }
+    }*/
 
-    Dialog {
+    /*Dialog {
         id: message_template3
         z: 2
         x: parent.width / 2.25
@@ -769,7 +782,7 @@ Connections {
         onRejected: {
             message_template.close()
         }
-    }
+    }*/
     Timer {
         id: timer
         repeat: true
@@ -779,7 +792,7 @@ Connections {
         onTriggered: {
         }
     }
-    Rectangle {
+    /*Rectangle {
         id: tray_5
         anchors.right: tray_6.left
         anchors.rightMargin: 0.005 * parent.height
@@ -847,7 +860,7 @@ Connections {
 
             }
         }
-    }
+    }*/
     function tooltip_reset() {
         tooltip_template.x = 0
         tooltip_template.y = 0
@@ -980,7 +993,7 @@ Connections {
         font.pixelSize: Math.min(root.width / 47, root.height / 37)
         opacity: statusindicator2.opacity
     }
-    Rectangle {
+    /*Rectangle {
         id: tray_3
         anchors.left: parent.left
         anchors.right: parent.right
@@ -991,7 +1004,7 @@ Connections {
         opacity: 0.5
         radius: 5
         z: 0
-    }
+    }*/
     function updateTimer_2() {
         var hours = Math.floor(mission_timer.elapsedTime / 3600)
         var minutes = Math.floor((mission_timer.elapsedTime % 3600) / 60)
@@ -1029,25 +1042,25 @@ Connections {
             spacing: 0.015 * root.height
 
             ROVButton {
-                text: "MANUAL"
+                text: "HOLD"
                 index: 0
                 baseColor: "#2ECC71"
             }
 
             ROVButton {
-                text: "AUTO"
+                text: "MANUAL"
                 index: 1
                 baseColor: "#3498DB"
             }
 
             ROVButton {
-                text: "HOLD"
+                text: "DEPTH"
                 index: 2
                 baseColor: "#F39C12"
             }
 
             ROVButton {
-                text: "RTS"
+                text: "STABILIZE"
                 index: 3
                 baseColor: "#E74C3C"
             }
@@ -1163,7 +1176,6 @@ Connections {
     }
     onMap_image_Captured: {
         clear_status()
-        //template_text2.text = "Capture Status Message!!!    "
         template_content2.text = "Frame has been\n Captured Successfully!!!"
         message_template2.open()
     }
@@ -1178,32 +1190,35 @@ Connections {
         anchors.left: box_1.right
         anchors.leftMargin:0.005*parent.width
         anchors.rightMargin: 0.005 * parent.width
-        width: box_1.width
-        height: box_1.height
-        color: box_1.color
-        opacity: box_1.opacity
-        radius: box_1.radius
-        gradient:Gradient{
+        width: box_5.width
+        height: box_5.height
+        color: box_5.color
+        opacity: box_5.opacity
+        radius: box_5.radius
+        /*gradient:Gradient{
             GradientStop{
                 position: 0.0; color:"#111111"
             }
             GradientStop {
                 position:1.0;color:"#333333"}
+        }*/
         }
-        border.color:"black"
-        border.width:1
+
 
     ColumnLayout {
-        anchors.fill:parent
-        spacing:parent.height*0.001
+        anchors.top: box_6.top
+               anchors.bottom: box_6.bottom
+               anchors.left: box_6.left
+               anchors.right: box_6.right
+               spacing: 0.001 * parent.height
         Text {
             id: p10
             Layout.fillWidth: true
             Layout.fillHeight:true
-            text: temp
+            text:temp.toFixed(1)
             font.bold: true
             style: Text.Sunken
-            font.pixelSize: Math.min(box_1.width / 3, box_1.height / 3)
+            font.pixelSize: Math.min(box_5.width / 3, box_5.height / 3)
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             color: "white"
@@ -1212,15 +1227,15 @@ Connections {
             id: p11
             Layout.fillWidth: true
             Layout.fillHeight: true
-            text: qsTr("Temperature")
+            text: qsTr("Temperature(\u00B0C)")
             font.bold:true
-            font.pixelSize: Math.min(box_1.width / 7, box_1.height / 6)
+            font.pixelSize: Math.min(box_5.width / 7, box_5.height / 6)
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             color: "white"
         }
       }
-    }
+
     Rectangle {
         id: box_7
         anchors.bottom: parent.bottom
@@ -1228,46 +1243,42 @@ Connections {
         anchors.left: box_6.right
         anchors.rightMargin:0.005*parent.width
         anchors.leftMargin: 0.005 * parent.width
-        width: box_1.width
-        height: box_1.height
-        color: box_1.color
-        opacity: box_1.opacity
-        radius: box_1.radius
-        gradient:Gradient{
-            GradientStop {
-                position: 0.0; color:"#111111"}
-            GradientStop {
-                position:1.0;color:"#333333"}
-        }
-        border.color:"black"
-        border.width:1
+        width: box_5.width
+        height: box_5.height
+        color: box_5.color
+        opacity: box_5.opacity
+        radius: box_5.radius
+}
     ColumnLayout {
-        anchors.fill:parent
-        spacing:parent.height*0.05
-                Image {
-                    id: batteryIcon
-                    source: "qrc:/resources/images/100%.png"   // Your battery image
-                    sourceSize.width: 0.03 * root.width
-                    sourceSize.height: width
-                    anchors.top: parent.top
-                    anchors.bottom:parent.bottom
-                    anchors.topMargin: 0.002 * root.height
-                    anchors.left: parent.left
-                    anchors.leftMargin: 0.005*root.width
-                    //anchors.verticalCenter: parent.verticalCenter
-                    fillMode: Image.PreserveAspectFit
-                }
-                Text {
-                    id: batteryText
-                    text: battery
-                    font.pixelSize: Math.min(box_7.width / 3.4, box_7.height / 3.5)
-                    font.bold:true
-                    color: "#FFFFFF"
-                    anchors.verticalCenter: batteryIcon.verticalCenter
-                    anchors.left: batteryIcon.right
-                    anchors.leftMargin: 6
-                }
-            }
+        anchors.top: box_7.top
+               anchors.bottom: box_7.bottom
+               anchors.left: box_7.left
+               anchors.right: box_7.right
+        spacing:0.005*root.width
+
+        Text {
+            id: p12
+            Layout.fillWidth: true
+            text:yaw.toFixed(1)
+            font.bold: true
+            style: Text.Sunken
+            font.pixelSize: Math.min(box_5.width / 3, box_5.height / 3)
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            color: "white"
+        }
+        Text {
+            id: batteryText
+            Layout.fillWidth: true
+            text: "Heading(\u00B0)"
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: Math.min(box_5.width / 7, box_5.height / 6)
+            font.bold:true
+            color: "#FFFFFF"
+        }
+
+
         }
     Rectangle {
         id: box_1
@@ -1275,19 +1286,11 @@ Connections {
         anchors.bottomMargin: 0.013 * parent.width
         anchors.left: box_5.right
         anchors.leftMargin: 0.005 * parent.width
-        width: 0.075 * parent.width
-        height: 0.1125 * parent.height
-        color: "black"
-        opacity: 0.7
-        radius: 8
-        gradient:Gradient{
-            GradientStop {
-                position: 0.0; color:"#111111"}
-            GradientStop {
-                position:1.0;color:"#333333"}
-        }
-        border.color:"black"
-        border.width:1
+        width: box_5.width
+        height: box_5.height
+        color: box_5.color
+        opacity: box_5.opacity
+        radius: box_5.radius
     }
     ColumnLayout {
         anchors.top: box_1.top
@@ -1295,14 +1298,13 @@ Connections {
         anchors.left: box_1.left
         anchors.right: box_1.right
         spacing: 0.001 * parent.height
-        anchors.bottomMargin: 0.005 * root.height
         Text {
             id: y10
             Layout.fillWidth: true
-            text:depth
+            text:depth.toFixed(1)
             font.bold: true
             style: Text.Sunken
-            font.pixelSize: Math.min(box_1.width / 3, box_1.height / 3)
+            font.pixelSize: Math.min(box_5.width / 3, box_5.height / 3)
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             color: "white"
@@ -1312,7 +1314,7 @@ Connections {
             Layout.fillWidth: true
             text: qsTr("Depth(m)")
             font.bold:true
-            font.pixelSize: Math.min(box_1.width / 7, box_1.height / 6)
+            font.pixelSize: Math.min(box_5.width / 7, box_5.height / 6)
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             color: "white"
@@ -1322,13 +1324,13 @@ Connections {
             id: box_8
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 0.013 * parent.width
-            anchors.right: box_2.left
+            anchors.right: box_5.left
             anchors.rightMargin: 0.005 * parent.width
-            width: box_1.width
-            height: box_1.height
-            color: box_1.color
-            opacity: box_1.opacity
-            radius: box_1.radius
+            width: box_5.width
+            height: box_5.height
+            color: box_5.color
+            opacity: box_5.opacity
+            radius: box_5.radius
             gradient:Gradient{
                 GradientStop {
                     position: 0.0; color:"#111111"}
@@ -1346,7 +1348,7 @@ Connections {
         text: voltage
         font.bold: true
         style: Text.Sunken
-        font.pixelSize: Math.min(box_1.width / 4, box_1.height / 4)
+        font.pixelSize: Math.min(box_5.width / 4, box_5.height / 4)
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
         color: "white"
@@ -1356,7 +1358,7 @@ Connections {
         Layout.fillWidth: true
         text: qsTr("Voltage")
         font.bold:true
-        font.pixelSize: Math.min(box_1.width / 7, box_1.height / 6)
+        font.pixelSize: Math.min(box_5.width / 7, box_5.height / 6)
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
         color: "white"
@@ -1364,76 +1366,16 @@ Connections {
     }
 }
     Rectangle {
-        id: box_2
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0.013 * parent.width
-        anchors.right: box_5.left
-        anchors.rightMargin: 0.005 * parent.width
-        width: box_1.width
-        height: box_1.height
-        color: box_1.color
-        opacity: box_1.opacity
-        radius: box_1.radius
-        gradient:Gradient{
-            GradientStop {
-                position: 0.0; color:"#111111"}
-            GradientStop {
-                position:1.0;color:"#333333"}
-        }
-        border.color:"black"
-        border.width:1
-    }
-    ColumnLayout {
-        anchors.top: box_1.top
-        anchors.bottom: box_1.bottom
-        anchors.left: box_2.left
-        anchors.right: box_2.right
-        spacing: 0.001 * parent.height
-        Text {
-            id: p12
-            Layout.fillWidth: true
-            text: speed_max
-            font.bold: true
-            style: Text.Sunken
-            font.pixelSize: Math.min(box_1.width / 4, box_1.height / 4)
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
-            color: "white"
-        }
-        Text {
-            id: p13
-            Layout.fillWidth: true
-            text: qsTr("Speed(m/s)")
-            font.bold:true
-            font.pixelSize: Math.min(box_1.width / 7, box_1.height / 6)
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
-            color: "white"
-        }
-    }
-    Rectangle {
         id: box_5
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 0.013 * parent.width
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: -0.05*root.width
-        width: 0.075 * parent.width
-        height: 0.1125 * parent.height
+        //anchors.horizontalCenterOffset: -0.05*root.width
+        width: 0.075 * root.width
+        height: 0.1125 * root.height
         color: "black"
-        opacity: 0.7
-        radius: 8
-        gradient:Gradient{
-            GradientStop {
-                position: 0.0;
-                color:"#111111"
-            }
-            GradientStop {
-                position:1.0;
-                color:"#333333"
-            }
-        }
-        border.color:"black"
-        border.width:1
+        opacity: 0.5
+        radius: 0.005*root.width
     }
     Rectangle {
         id: gauge
@@ -1465,7 +1407,7 @@ Connections {
         z: gauge.z
         height: gauge.height * .7
         transformOrigin: Item.Center
-        rotation:-link.yaw_value
+        rotation: yaw
         Behavior on rotation {
             NumberAnimation {
                 duration: 300
@@ -1473,172 +1415,293 @@ Connections {
             }
         }
     }
-    Rectangle {
-                id: artificialHorizon2
-                visible: true
-                width: gauge.width
-                height: gauge.width
-                anchors.left: imageRect.left
-                anchors.leftMargin: 0.02 * root.width
-                anchors.top: gauge.bottom
-                anchors.topMargin: 0.2*parent.height
-                color: "transparent"
-                radius:0.5*parent.width
-                clip:true
-                Rectangle {
-                    id: artificialHorizon
-                    width: parent.width * 1.6
-                    height: parent.height * 1.6
-                    anchors.centerIn: parent
-                    visible: true
-                    radius:0.5*parent.width
-                    Rectangle {
-                        width: size*0.9
-                        height: size*0.75
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: Qt.rgba(0, 0, 0, 0)
-                        clip: true
-                        z: 2
-                        Item {
-                            height: parent.height
-                            width: parent.width
-                            Column {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: _reticleSpacing
-                                Repeater {
-                                    model: 36
-                                    Rectangle {
-                                        property int _pitch: -(modelData * 5 - 90)
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        width: (_pitch % 10) === 0 ? _longDash : _shortDash
-                                        height: _reticleHeight
-                                        color: "white"
-                                        antialiasing: true
-                                        smooth: true
-                                        Text {
-                                            id: pitch_indicator_1
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            anchors.horizontalCenterOffset: -(_longDash)
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            smooth: true
-                                            font.pointSize: parent.height > root.height
-                                                            / 2 ? 0.9 * _fontSize : 0.5 * _fontSize
-                                            text: _pitch
-                                            font.bold: true
-                                            style: Text.Sunken
-                                            color: "white"
-                                            visible: (_pitch !== 0)
-                                                     && ((_pitch % 10) === 0)
-                                        }
-                                        Text {
-                                            id: pitch_indicator_2
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            anchors.horizontalCenterOffset: (_longDash)
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            smooth: true
-                                            font.pointSize: mapContainer.height > root.height
-                                                            / 2 ? 0.9 * _fontSize : 0.5 * _fontSize
-                                            text: (_pitch)
-                                            font.bold: true
-                                            style: Text.Sunken
-                                            color: "white"
-                                            visible: (_pitch !== 0)
-                                                     && ((_pitch % 10) === 0)
-                                        }
-                                    }
-                                }
-                            }
-                            transform: [
-                                Translate {
-                                    y: (link.pitch_value * _reticleSlot / 7) - (_reticleSlot / 2)
-                                }
-                            ]
-                        }
-                    }
 
-                    Rectangle {
-                        id: sky
-                        anchors.fill: parent
-                        z: 1
-                        smooth: true
-                        antialiasing: true
-                        gradient: Gradient {
-                            GradientStop {
-                                position: 0.25
-                                color: Qt.hsla(0.6, 1.0, 0.25)
-                            }
-                            GradientStop {
-                                position: 0.5
-                                color: Qt.hsla(0.6, 0.5, 0.55)
-                            }
-                        }
-                    }
-                    Rectangle {
-                        id: ground
-                        z: 1
-                        height: parent.height / 2
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            bottom: parent.bottom
-                        }
-                        smooth: true
-                        antialiasing: true
-                        gradient: Gradient {
-                            GradientStop {
-                                position: 0.0
-                                color: Qt.hsla(0.25, 0.5, 0.45)
-                            }
-                            GradientStop {
-                                position: 0.25
-                                color: Qt.hsla(0.25, 0.75, 0.25)
-                            }
-                        }
-                    }
-                    transform: [
-                        Translate {
-                            y: y6
-                        },
-                        Rotation {
-                            origin.x: artificialHorizon.width / 2
-                            origin.y: artificialHorizon.height / 2
-                            angle: link.roll_value
-                        }
-                    ]
+    /*Item {
+        id: hud_visual
+        width: artificialHorizon2.width
+        height: artificialHorizon2.height
+        z:5
+        anchors.top: artificialHorizon2.top
+        anchors.left: artificialHorizon2.left
+        anchors.bottom: artificialHorizon2.bottom
+        // === API (matches your old gauge) ===
+        property real minimumValue: -90
+        property real maximumValue: 90
+        property real value: 0
+
+        property real startAngle: 90
+        property real endAngle: -90
+        property real tickStep: 45
+        property int minorTickCount: 10
+
+        // === Derived ===
+        readonly property real range: maximumValue - minimumValue
+
+        function valueToAngle(v) {
+             return 90 + (v - minimumValue) / range * (-180)
+         }
+
+        // === Major Tick Marks ===
+        Repeater {
+            model: hud_visual.range / hud_visual.tickStep + 1
+            delegate: Rectangle {
+                width: hud_visual.width * 0.01
+                height: hud_visual.width * 0.075
+                color: "#e34c22"
+                antialiasing: true
+
+                anchors.centerIn: parent
+                transform: Rotation {
+                    angle:hud_visual.valueToAngle(
+                              hud_visual.minimumValue + index * hud_visual.tickStep)
+                    origin.x: width / 2
+                    origin.y: hud_visual.height / 2
                 }
-                ShaderEffect {
-                        anchors.fill: parent
-                        property variant source: artificialHorizon
-                        fragmentShader: "
-                            varying highp vec2 qt_TexCoord0;
-                            uniform sampler2D source;
-                            void main() {
-                                vec2 center = vec2(0.5, 0.5);
-                                float radius = 0.5;
-                                vec2 uv = qt_TexCoord0 - center;
-                                float len = length(uv);
-                                vec4 color = texture2D(source, qt_TexCoord0);
-                                if (len > radius) {
-                                    color.a = 0.0; // outside circle -> transparent
-                                }
-                                gl_FragColor = color;
-                            }
-                        "
-                        z: 1
-                    }
-                    Image {
-                        id: line_1
-                        source: "qrc:/resources/images/crossHair.svg"
-                        anchors.centerIn: parent
-                        mipmap: true
-                        z: 2
-                        width: parent.width
-                        fillMode: Image.PreserveAspectFit
-                        visible: mapContainer.height > root.height / 2
-                    }
-    }              
+            }
+        }
+
+        // === Labels ===
+        Repeater {
+            model: hud_visual.range / hud_visual.tickStep + 1
+            delegate: Text {
+                text: hud_visual.minimumValue + index * hud_visual.tickStep
+                font.bold: true
+                font.pointSize: Math.min(hud_visual.width / 23,
+                                          hud_visual.height / 15)
+                color: "white"
+                antialiasing: true
+
+                anchors.centerIn: parent
+                transform: Rotation {
+                    angle: hud_visual.valueToAngle(hud_visual.minimumValue + index * hud_visual.tickStep)
+                    origin.x: hud_visual.width / 2
+                    origin.y: hud_visual.height / 2
+                }
+                y: hud_visual.height * 0.1
+            }
+        }
+
+        // === Needle ===
+        Repeater {
+            model: hud_visual.range / hud_visual.tickStep + 1
+
+            delegate: Rectangle {
+
+                width: hud_visual.width * 0.02
+                height: hud_visual.width * 0.1
+                color: "#e34c22"
+
+                anchors.centerIn: parent
+
+                transform: Rotation {
+                    angle: hud_visual.valueToAngle(
+                              hud_visual.minimumValue +
+                              index * hud_visual.tickStep)
+                    origin.x: width / 2
+                    origin.y: hud_visual.height / 2
+                }
+            }
+        }
+    }*/
+
+    OpacityMask {
+             anchors.fill: artificialHorizon2
+             source: artificialHorizon2
+             maskSource: mask
+             z: 1
+         }
+         Rectangle {
+             id: mask
+             anchors.fill: artificialHorizon2
+             radius: artificialHorizon2.width / 2
+             color: "black"
+             visible: false
+             z: 1
+         }
+         Image {
+             id: line_1
+             source: "qrc:/resources/images/crossHair.svg"
+             anchors.centerIn: artificialHorizon2
+             mipmap: true
+             z: 2
+             width: gauge.width
+             sourceSize.width: width
+             fillMode: Image.PreserveAspectFit
+             visible:true
+
+         /*Image {
+             id: head_2
+             width: 0.25 * parent.width
+             height: 0.005 * root.height
+             anchors.top: artificialHorizon2.top
+             anchors.horizontalCenter: parent.horizontalCenter
+             z: 3
+             visible: true
+             source: "qrc:/resources/images/up_button_red.svg"
+         }*/
+
+
+             /*Connections {
+                 target: hud_visual
+                 function onWidthChanged() {
+                     head_2.requestPaint()
+                 }
+             }
+             onPaint: {
+                 var ctx = getContext("2d")
+                 ctx.reset()
+                 ctx.fillStyle = "red"
+                 ctx.beginPath()
+                 ctx.moveTo(0, height) // Start from the bottom-left corner
+                 ctx.lineTo(width / 2, 0) // Draw to the top-middle point
+                 ctx.lineTo(width, height) // Draw to the bottom-right corner
+                 ctx.closePath()
+                 ctx.fill()
+             }*/
+         }
+         Rectangle {
+             id: artificialHorizon2
+             visible: false
+             width: gauge.width
+             height: gauge.width
+             anchors
+             {
+                 top:modePanel.top
+                 left:gauge.left
+                 //margins:0.005*root.width
+             }
+
+             color: "transparent"
+             radius: 100
+
+             Rectangle {
+                 id: artificialHorizon
+                 width: root.width * 4
+                 height: root.height * 8
+                 anchors.centerIn: parent
+                 visible: true
+                 opacity:  1.0
+
+                 Rectangle {
+                     height: size * 0.75
+                     width: size * 0.9
+                     anchors.horizontalCenter: parent.horizontalCenter
+                     anchors.verticalCenter: parent.verticalCenter
+                     color: Qt.rgba(0, 0, 0, 0)
+                     clip: true
+                     z: 2
+                     Item {
+                         height: parent.height
+                         width: parent.width
+                         Column {
+                             anchors.horizontalCenter: parent.horizontalCenter
+                             anchors.verticalCenter: parent.verticalCenter
+                             spacing: _reticleSpacing
+                             Repeater {
+                                 model: 36
+                                 Rectangle {
+                                     property int _pitch: -(modelData * 5 - 90)
+                                     anchors.horizontalCenter: parent.horizontalCenter
+                                     width: (_pitch % 10) === 0 ? _longDash : _shortDash
+                                     height: _reticleHeight
+                                     color: "white"
+                                     antialiasing: true
+                                     smooth: true
+
+                                     Text {
+                                         id: pitch_indicator_1
+                                         anchors.horizontalCenter: parent.horizontalCenter
+                                         anchors.horizontalCenterOffset: -(_longDash)
+                                         anchors.verticalCenter: parent.verticalCenter
+                                         smooth: true
+                                         //font.family: ScreenTools.demiboldFontFamily
+                                         font.pointSize:  0.5 * _fontSize
+                                         text: _pitch
+                                         font.bold: true
+                                         style: Text.Sunken
+                                         color: "white"
+                                         visible: (_pitch !== 0)
+                                                  && ((_pitch % 10) === 0)
+                                     }
+
+                                     Text {
+                                         id: pitch_indicator_2
+                                         anchors.horizontalCenter: parent.horizontalCenter
+                                         anchors.horizontalCenterOffset: (_longDash)
+                                         anchors.verticalCenter: parent.verticalCenter
+                                         smooth: true
+                                         //font.family: ScreenTools.demiboldFontFamily
+                                         font.pointSize:  0.5 * _fontSize
+                                         text: (_pitch)
+                                         font.bold: true
+                                         style: Text.Sunken
+                                         color: "white"
+                                         visible: (_pitch !== 0)
+                                                  && ((_pitch % 10) === 0)
+                                     }
+                                 }
+                             }
+                         }
+                         transform: [
+                             Translate {
+                                 y: (y6 * _reticleSlot / 7) - (_reticleSlot / 2)
+                             }
+                         ]
+                     }
+                 }
+
+                 Rectangle {
+                     id: sky
+                     anchors.fill: parent
+                     z: 1
+                     smooth: true
+                     antialiasing: true
+                     gradient: Gradient {
+                         GradientStop {
+                             position: 0.25
+                             color: Qt.hsla(0.6, 1.0, 0.25)
+                         }
+                         GradientStop {
+                             position: 0.5
+                             color: Qt.hsla(0.6, 0.5, 0.55)
+                         }
+                     }
+                 }
+                 Rectangle {
+                     id: ground
+                     z: 1
+                     height: sky.height / 2
+                     anchors {
+                         left: sky.left
+                         right: sky.right
+                         bottom: sky.bottom
+                     }
+                     smooth: true
+                     antialiasing: true
+                     gradient: Gradient {
+                         GradientStop {
+                             position: 0.0
+                             color: Qt.hsla(0.25, 0.5, 0.45)
+                         }
+                         GradientStop {
+                             position: 0.25
+                             color: Qt.hsla(0.25, 0.75, 0.25)
+                         }
+                     }
+                 }
+                 transform: [
+                     Translate {
+                         y: y6
+                     },
+                     Rotation {
+                         origin.x: artificialHorizon.width / 2
+                         origin.y: artificialHorizon.height / 2
+                         angle: roll
+                     }
+                 ]
+             }
+         }
+
     function mapValue(value, inputMin, inputMax, outputMin, outputMax) {
         var mappedValue = (value - inputMin) * (outputMax - outputMin)
                 / (inputMax - inputMin) + outputMin
@@ -1656,12 +1719,12 @@ Connections {
     }
     Button {
         id: start_stop_recording
-        width: 0.025 * root.width
-        height: 0.025 * root.width
+        width:0.025*root.width
+        height:0.03*root.width
         property bool pressed_not: false
         anchors {
             top: box_5.top
-            topMargin: 0.0075 * parent.width
+            topMargin: 0.005 * root.width
             horizontalCenter: box_5.horizontalCenter
             horizontalCenterOffset: pause_recording.visible == false ? 0 : -0.25 * box_5.width
         }
@@ -1676,8 +1739,8 @@ Connections {
             color: "grey"
             opacity: 0.5
             radius: 100
-            border.color: start_stop_recording.pressed_not ? "white" : "transparent"
-            border.width: 0.0015 * root.width
+            //border.color: start_stop_recording.pressed_not ? "white" : "transparent"
+            //border.width: 0.0015 * root.width
         }
         contentItem: Canvas {
             id: sta_sto2
@@ -1889,7 +1952,7 @@ Connections {
             }
         }
     }
-    Connections {
+    /*Connections {
         target: myLink
 
         function onDataUpdated() {
@@ -1898,7 +1961,7 @@ Connections {
             p10.text = depth = data[1]
             data = []
         }
-    }
+    }*/
     function capture_image()
                    {
                         var saveDirectory;
@@ -1941,7 +2004,7 @@ Connections {
            background: Rectangle {
               // color: "transparent"
 
-               radius: curvy_edge
+               radius: 0.005*root.width
                opacity: 1.0
            }
            focus: true
@@ -1966,12 +2029,11 @@ Connections {
                        Layout.fillWidth: true
                        id: about_title
                        text: "\Orca "
-                       font.family: font_family
                        font.bold: true
-                       font.italic: italic_not
+                       font.italic: false
 
-                       font.underline: underline_not
-                       font.strikeout: strike_out_not
+                       font.underline: false
+                       font.strikeout: false
                        font.pixelSize: Math.min(root.width / 40, root.height / 30)
                        color:"black"
                        horizontalAlignment: Text.AlignHCenter
@@ -1981,10 +2043,10 @@ Connections {
                        Layout.fillWidth: true
                        id: about_body
                        text: "\n\nVersion: 3.1.0\n\n\nThe ORCA is a centralized interface designed for monitoring,controlling and commanding interface for the Amphibious Crawling Robot developed by VIKRA.This application is designed to provide real-time vehicle status updates,enables real-time acquisition of sensor data from the vehicle, and allow seamless control of its movements and operations.It also supports the operation of the integrated Cone Penetration Tester (CPT) for geotechnical assessments and analysis.With a focus on performance, reliability, and usability, the control station offers a smooth,intuitive and  user-friendly  user interface(UI) to ensure intuitive interaction, reliable performance monitoring, tailored for efficient field operations in diverse terrains i.e., across both land and shallow water environments.\n\n\nThis Software is built on Qt which is a open-source software for developing embedded applications based on Qt 5.12.2 (MINGW,x64).Along with, 3rd party open-source library used for Video processing.No copyright violation taken place"
-                       font.family: font_family
+                       //font.family: font_family
                        //font.bold: true
-                       font.italic: italic_not
-                       //font.underline: underline_not
+                       font.italic: false
+                       font.underline: false
                        font.strikeout: false
                        font.pixelSize: Math.min(root.width / 70, root.height / 60)
                        color: "black"
@@ -1995,11 +2057,11 @@ Connections {
                        Layout.fillWidth: true
                        id: about_title2
                        text: "About VIKRA "
-                       font.family: font_family
+                       //font.family: font_family
                        font.bold: true
-                       font.italic: italic_not
-                       font.underline: underline_not
-                       font.strikeout: strike_out_not
+                       font.italic: false
+                       font.underline: false
+                       font.strikeout: false
                        font.pixelSize: Math.min(root.width / 40, root.height / 30)
                        color: "black"
                        //horizontalAlignment: Text.AlignHCenter
@@ -2014,10 +2076,10 @@ Connections {
    Diverse applications: dam inspections, aquaculture, research, and naval.
    Offering deep-sea experimentation for academic and commercial projects.
    Developers of Koorma, an amphibious land and water robot."
-                       font.family: font_family
+                       //font.family: font_family
                        font.bold: false
-                       font.italic: italic_not
-                       //font.underline: underline_not
+                       font.italic: false
+                       font.underline: false
                        font.strikeout: false
                        font.pixelSize: Math.min(root.width / 70, root.height / 60)
                        color: "black"
@@ -2041,7 +2103,7 @@ Connections {
                Rectangle {
                    anchors.fill: parent
                    color: "#001f2f"
-                   radius: curvy_edge
+                   radius: 0.005*root.width
                }
                ScrollView {
                    id: scroll3
@@ -2065,15 +2127,14 @@ Connections {
                            Text {
                                text: modelData
                                wrapMode: Text.Wrap
-                               font.family: font_family
+                               //font.family: font_family
                                font.bold: true
-                               font.italic: italic_not
-                               font.underline: underline_not
+                               font.italic: false
+                               font.underline: false
                                font.strikeout: false
                                //textFormat: Text.RichText
                                color: "white"
-                               font.pixelSize: Math.min(root.width / 50, root,
-                                                        height / 40)
+                               font.pixelSize: Math.min(root.width / 50, root.height / 40)
                                //onLinkActivated: Qt.openUrlExternally(link)
                            }
                        }
@@ -2097,7 +2158,7 @@ Connections {
                Rectangle {
                    anchors.fill: parent
                    color: "#001f2f"
-                   radius: curvy_edge
+                   radius: 0.005*root.width
                }
                ColumnLayout {
                    width: 0.85 * parent.width
@@ -2133,7 +2194,7 @@ Connections {
                            //font.bold : true
                            selectByMouse: true
                            background: Rectangle {
-                               radius: curvy_edge
+                               radius: 0.005*root.width
                                border.color: min7.focus ? "#21be2b" : "transparent"
                            }
 
@@ -2161,9 +2222,9 @@ Connections {
                            //z:1
                            //font.pixelSize: Math.min(parent.width / 20, parent.height / 10)
                            background: Rectangle {
-                               color: background_colortheme2
-                               radius: curvy_edge // 5
-                               border.color: graph_clear_status === false ? "#00FFFF" : neonGreen
+                               color:"#011026"// background_colortheme2
+                               radius: 0.005*root.width // 5
+                               border.color:  neonGreen
                            }
 
                            contentItem: Text {
@@ -2173,11 +2234,11 @@ Connections {
                                font.pixelSize: Math.min(root.width / 60,
                                                         root.height / 50)
                                style: Text.Sunken
-                               font.family: font_family
-                               font.bold: bold_not
-                               font.italic: italic_not
-                               font.underline: underline_not
-                               font.strikeout: strike_out_not
+                               //font.family: font_family
+                               font.bold:true// bold_not
+                               font.italic: false
+                               font.underline: false
+                               font.strikeout: false
                                //font: export_log.font
                                //opacity: enabled ? 1.0 : 0.3
                                color: "White"
@@ -2226,7 +2287,7 @@ Connections {
                Rectangle {
                    anchors.fill: parent
                    color: "#001f2f"
-                   radius: curvy_edge
+                   radius: 0.005*root.width
                }
 
                ColumnLayout {
@@ -2243,10 +2304,10 @@ Connections {
                            //text: export_log.text
                            text: "Contact "
                            wrapMode: Text.Wrap
-                           font.family: font_family
+                           //font.family: font_family
                            font.bold: true
-                           font.italic: italic_not
-                           font.underline: underline_not
+                           font.italic: false
+                           font.underline: false
                            font.strikeout: false
                            font.pixelSize: Math.min(root.width / 70, root.height / 60)
                            style: Text.Sunken
@@ -2268,10 +2329,10 @@ Connections {
                            text: "<a href=https://vikraoceantech.com/#contact style='color:lightblue;'>https://vikraoceantech.com/#contact</a>"
                            textFormat: Qt.RichText
                            //wrapMode: Text.Wrap
-                           font.family: font_family
+                           //font.family: font_family
                            font.bold: true
-                           font.italic: italic_not
-                           font.underline: underline_not
+                           font.italic: false
+                           font.underline: false
                            font.strikeout: false
                            font.pixelSize: Math.min(root.width / 70, root.height / 60)
                            color: "White"
@@ -2286,10 +2347,10 @@ Connections {
                        Layout.fillHeight: true
                        Text {
                            text: "(or)"
-                           font.family: font_family
+                           //font.family: font_family
                            font.bold: true
-                           font.italic: italic_not
-                           font.underline: underline_not
+                           font.italic: false
+                           font.underline: false
                            font.strikeout: false
                            font.pixelSize: Math.min(root.width / 70, root.height / 60)
                            style: Text.Sunken
@@ -2310,13 +2371,13 @@ Connections {
                            text: "Please visit <a href='https://vikraoceantech.com' style='color:lightblue;'>vikraoceantech.com</a><br>for further information."
                            textFormat: Qt.RichText
 
-                           font.family: font_family
+                           //font.family: font_family
 
 
 
                            font.bold: true
-                           font.italic: italic_not
-                           font.underline: underline_not
+                           font.italic: false
+                           font.underline: false
                            font.strikeout: false
                            font.pixelSize: Math.min(root.width / 70, root.height / 60)
                            color: "White"
@@ -2335,4 +2396,129 @@ Connections {
                    }
                }
            }
+           Rectangle {
+                   id: err_rect
+                   //text: "No error"
+                   //anchors.top:root.top
+                   parent: root.menuBar // Set main menu toolbar as parent for tool button
+                   anchors.top:parent.top
+                   anchors.horizontalCenter: parent.horizontalCenter
+                   //anchors.topMargin: model.height>parent.height/2?0:0.01*parent.height
+                   //x:parent.width/2
+                   //anchors.horizontalCenter: parent.horizontalCenter
+                   //anchors.verticalCenter: parent.verticalCenter
+                   width: Math.min(parent.width * 0.35, 420)
+                       height: parent.height * 0.75
+                       radius: 6
+                   //visible: false
+                   //anchors.leftMargin:cam.height<root.height/2?0.025*parent.width:0.075*parent.width
+                   //font.pixelSize:Math.min(root.width/65,root.height/45)//main_page.model.height>parent.height/2?Math.min(root.width/75,root.height/55):Math.min(root.width/55,root.height/35)
+                   color: "transparent"
+                   visible: err_text !== ""
+
+                      clip: true
+                   anchors.centerIn: parent
+
+                   /*gradient: Gradient {
+                                                GradientStop { position: 0.0; color: "lightsteelblue" }
+                                                GradientStop { position: 1.0; color: "blue" }
+                                            }*/
+                   //z:1
+                   RowLayout {
+                       anchors.fill: parent
+
+                      // width: parent.width
+                     //  height: parent.height
+                       spacing: 0.005 * parent.width
+
+                       Item {
+                           width: parent.width
+                           height: parent.height
+                           Layout.fillWidth: true
+                           Layout.fillHeight: true
+                           Image {
+                               id: err_symbol
+                               source: err_warning_path
+                               //Layout.alignment: Qt.AlignVCenter
+                              // sourceSize.width: parent.width
+                               //sourceSize.height: parent.height
+                               fillMode : Image.PreserveAspectFit
+                               Layout.preferredWidth:height
+                               Layout.preferredHeight:height
+                               //yout.fillHeight: true
+                           }
+                       }
+
+                       Text {
+                           id: err_msg_text
+                           text: err_text
+                           font.bold: true
+                           Layout.fillWidth: true
+                          // Layout.fillHeight: true
+                           verticalAlignment: Text.AlignVCenter
+                           horizontalAlignment: Text.AlignHCenter
+                           width: parent.width
+                           height: parent.height
+                           color: "yellow"
+                           font.pixelSize: Math.min(root.width / 65, root.height / 45)
+                           //font.family: font_family
+                           //font.bold: bold_not
+                           font.italic: false
+                           font.underline: false
+                           font.strikeout: false
+                       }
+                   }
+
+                   property bool isBlink: false
+
+                   // Start blinking when isBlink changes
+                   onIsBlinkChanged: {
+                       if (isBlink)
+                           startBlinkAnimation1()
+                       else
+                           stopBlinkAnimation1()
+                   }
+
+                   function startBlinkAnimation1() {
+                       blinkAnimation1.running = true
+                   }
+
+                   function stopBlinkAnimation1() {
+                       blinkAnimation1.running = false
+                       opacity = 1 // Ensure the indicator is visible after stopping
+                   }
+
+                   SequentialAnimation {
+                       id: blinkAnimation1
+                       loops: Animation.Infinite
+
+                       PropertyAnimation {
+                           target: err_rect
+                           property: "visible"
+                           from: true
+                           to: false
+                           duration: 500
+                       }
+                       PropertyAnimation {
+                           target: err_rect
+                           property: "visible"
+                           from: false
+                           to: true
+                           duration: 300
+                       }
+                   }
+
+                   Timer {
+                       id: start_Timer5
+                       interval: 750 // Timer interval in milliseconds
+                       running: false // Start the timer when the application starts
+                       repeat: true
+
+                       property int elapsedTime: 1 // Elapsed time in seconds
+
+                       onTriggered: {
+                           err_rect.isBlink = !err_rect.isBlink // Toggle blinking
+                       }
+                   }
+               }
 }

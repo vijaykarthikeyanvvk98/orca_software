@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.19)
-project(newui LANGUAGES CXX)
+project(ORCA LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(OpenCV_DIR "D:/QT projects/opencv/build2/install/x64/vc17/lib")
 find_package(OpenCV REQUIRED CONFIG)
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Quick Gui Multimedia)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Quick Gui Multimedia Core5Compat)
 set(SDL3_INCLUDE_DIR "D:/QT projects/SDL3-devel-3.2.28-VC/SDL3-3.2.28/include")
 set(SDL3_LIB_DIR     "D:/QT projects/SDL3-devel-3.2.28-VC/SDL3-3.2.28/lib/x64")
 set(SDL3_LIB_NAME    SDL3)  # name of the library without lib prefix or extension
@@ -16,7 +16,7 @@ link_directories(${SDL3_LIB_DIR})
 qt_standard_project_setup()
 qt_add_resources(QML_RESOURCES 
 qml.qrc)
-qt_add_executable(newui
+qt_add_executable(ORCA
     main.cpp
     videostreamer.h
     opencvimageprovider.h
@@ -31,12 +31,13 @@ qt_add_executable(newui
     datalogger.h datalogger.cpp
 )
 
-target_link_libraries(newui
+target_link_libraries(ORCA
     PRIVATE
         Qt6::Core
         Qt6::Widgets
         Qt6::Quick
         Qt6::Gui
+        Qt6::Core5Compat
         opencv_core
         opencv_imgproc
         opencv_highgui
