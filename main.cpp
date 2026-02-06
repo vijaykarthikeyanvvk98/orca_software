@@ -9,10 +9,14 @@
 #include <QWindow>
 #include <QFile>
 #include "qicon.h"
+#include <QSplashScreen>
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-
+    QSplashScreen *splash = new QSplashScreen;
+    splash->setPixmap(QPixmap(":/resources/images/vikra_2.jpeg"));
+    splash->show();
     QQmlApplicationEngine engine;
 
     qRegisterMetaType<cv::Mat>("cv::Mat");

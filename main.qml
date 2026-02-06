@@ -142,177 +142,198 @@ ApplicationWindow {
     property int li_key: 50
     property int sp_key: 50
     menuBar: MenuBar {
-            id: menuBar
-            Menu {
-                title: "Device"
-                Action {
-                    id: menu_2
-                    text: "ROV"
-                    onTriggered: {
-                        if (connection2.source == "qrc:/resources//images/connect.png") {
-                            if (ip_address === "") {
-                                ip_address = "192.168.56.2"
-                            }
-                            connection_status = true
-                            connect_stats(ip_address)
-                        } else if (connection2.source == "qrc:/resources//images/connected.svg") {
-                            connection_status = false
-                            ip_address = ""
-                            disconnect_stats()
+        id: menuBar
+
+        Menu {
+            title: "Device"
+
+
+            /*Action {
+                id: menu_1
+                text: "Test link"
+                onTriggered: {
+                    //ip_address = "169.254.191.126"
+                    ip_address = "127.0.0.1"
+
+                    connection_status = true
+                    connect_stats(ip_address)
+                }
+            }*/
+            Action {
+                id: menu_2
+                text: "ORCA"
+                onTriggered: {
+                    //console.log("haifedf")
+                    if (connection2.source == "qrc:/resources//images/connect.png") {
+                        if (ip_address === "") {
+                            ip_address = "192.168.56.2"
                         }
+                        connection_status = true
+                        connect_stats(ip_address)
+                    } else if (connection2.source == "qrc:/resources//images/connected.svg") {
+                        connection_status = false
+                        ip_address = ""
+                        disconnect_stats()
                     }
                 }
-                delegate: MenuItem {
-                    id: menuItem3
-                    contentItem: Text {
-                        text: menuItem3.text
-                        horizontalAlignment: Text.AlignLeft
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    background: Rectangle {
-                        implicitWidth: 200
-                        implicitHeight: 40
-                        opacity: enabled ? 1 : 0.3
-                    }
+            }
+
+            delegate: MenuItem {
+                id: menuItem3
+
+                contentItem: Text {
+                    text: menuItem3.text
+                    //font.family: font_family
+                    font.bold: true
+                    font.italic: false
+                    font.underline: false
+                    font.strikeout: false
+                    font.pixelSize: Math.min(root.width/70,root.height/60) // "Palatino Linotype"
+                    //font: menuItem3.font
+                    //opacity: enabled ? 1.0 : 0.3
+                    color: menuItem3.highlighted ? "#ffffff" : "#21be2b"
+                    horizontalAlignment: Text.AlignLeft
+                    verticalAlignment: Text.AlignVCenter
                 }
+
                 background: Rectangle {
                     implicitWidth: 200
                     implicitHeight: 40
-                    radius: 2
+                    opacity: enabled ? 1 : 0.3
+                    color: menuItem3.highlighted ? "#21be2b" :"#011026"
                 }
             }
-
-            Menu {
-                title: "Settings"
-               /* Action {
-                    text: "Display Settings"
-                    onTriggered: {
-                        if (!stack.empty)
-                            stack.pop(main_page)
-                        stack.push(display_page)
-                    }
-                }*/
-                Menu{
-                    title:"Application Settings"
-                Menu{
-                    title:"Camera Settigs"
-                    Action {
-                               text: "Web Camera"
-                               onTriggered: {
-                                   VideoStreamer.openVideoCamera("0")
-                                   opencvImage.visible = true
-                               }
-                           }
-                Action{
-                    text:"RTSP Camera"
-                    onTriggered: rtspDialog.open()
-                }
-
-                delegate: MenuItem {
-                    id: menuItem4
-
-                    contentItem: Text {
-                        text: menuItem4.text
-                        horizontalAlignment: Text.AlignLeft
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    background: Rectangle {
-                        implicitWidth: 180
-                        implicitHeight: 35
-                        opacity: enabled ? 1 : 0.3
-                    }
-                }
-                background: Rectangle {
-                    implicitWidth: 180
-                    implicitHeight: 35
-                    border.color: "blue"
-                }
+            background: Rectangle {
+                implicitWidth: 200
+                implicitHeight: 40
+                color: "#011026"
+                border.color: "#21be2b"
+                radius:2
             }
         }
-    }
-    Menu{
-        id:feature
-        title:"Feature"
-        Action{
-                    text:"Object detection"
+
+        Menu {
+            title:"Camera Settigs"
+
+            Action {
+                                           text: "Web Camera"
+                                           onTriggered: {
+                                               VideoStreamer.openVideoCamera("0")
+                                               opencvImage.visible = true
+                                           }
+                                       }
+                            Action{
+                                text:"RTSP Camera"
+                                onTriggered: rtspDialog.open()
+                            }
+
+            delegate: MenuItem {
+                id: menuItem4
+
+                contentItem: Text {
+                    text: menuItem4.text
+                    //font.family: font_family
+                    font.bold: true
+                    font.italic: false
+                    font.underline: false
+                    font.strikeout: false
+                    font.pixelSize: Math.min(root.width/70,root.height/60) // "Palatino Linotype"
+                    //opacity: enabled ? 1.0 : 0.3
+                    color: menuItem4.highlighted ? "#ffffff" : "#21be2b"
+                    horizontalAlignment: Text.AlignLeft
+                    verticalAlignment: Text.AlignVCenter
                 }
-                Action{
-                    text: "Crack detection"
+
+                background: Rectangle {
+                    implicitWidth: 200
+                    implicitHeight: 40
+                    opacity: enabled ? 1 : 0.3
+                    color: menuItem4.highlighted ? "#21be2b" : "#011026"
                 }
             }
+            background: Rectangle {
+                implicitWidth: 200
+                implicitHeight: 40
+                // color: current_theme_color2/"#ffffff"
+                border.color: "#21be2b"
+                radius:  0.005*root.width  // 5
+            }
+        }
+        Menu {
+            id: more_menu
+            title: "More"
+            /*Action {
+                text: "Debug Terminal"
+                onTriggered: {
+                    stack.push(terminal_page)
+                }
+            }*/
+
+
+            /*Action {
+                text: "Command Prompt"
+                onTriggered: {
+                    CmdLauncher.openCommandPrompt()
+                    //main_page.call_pop()
+                    //stack.push(terminal_page)
+                }
+            }*/
+            Action {
+                text: "About"
+
+                onTriggered: {
+                    about_window.open()
+                }
+            }
+            /*Action {
+                text: "User Manual"
+                onTriggered: {
+                    myLink.openLocalPdf()
+                }
+            }*/
             Menu {
-                id: more_menu
-                title: "More"
-               /* Action {
-                    text: "Debug Terminal"
-                    onTriggered: {
-                        stack.push(terminal_page)
-                    }
+                title: "Help" // ✅ This replaces Action + nested MenuItem
+
+
+                /*Action {
+                    text: "Contents"
+                    onTriggered: helpPopup.open()
                 }*/
                 Action {
-                    text: "About"
-
-                    onTriggered: {
-                        about_window.open()
-                    }
+                    text: "Application Information"
+                    onTriggered: info_window.open()
                 }
                 Action {
-                    text: "User Manual"
+                    text: "Software Support"
+                    onTriggered: support_window.open()
+                }
+                Action {
+                    text: "Report Issue"
+
+
+                    /*onTriggered: Qt.openUrlExternally(
+                                     "https://yourdomain.com/issues")*/
                     onTriggered: {
-                        myLink.openLocalPdf()
-                    }
-                }
-                Menu {
-                    title: "Help"
-                    Action {
-                        text: "Application Information"
-                        onTriggered: info_window.open()
-                    }
-                    Action {
-                        text: "Software Support"
-                        onTriggered: support_window.open()
-                    }
-                    Action {
-                        text: "Report Issue"
-                        onTriggered: {
-                            report_window.open()
-                        }
-                    }
-                    delegate: MenuItem {
-                        id: menuItem6
-
-                        contentItem: Text {
-                            text: menuItem6.text
-                            horizontalAlignment: Text.AlignLeft
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        background: Rectangle {
-                            implicitWidth: 200
-                            implicitHeight: 40
-                            opacity: enabled ? 1 : 0.3
-                            //color: menuItem6.highlighted ? "black" :"#011026"// current_theme_color2 //"#011026"
-                        }
-                    }
-                    background: Rectangle {
-                        implicitWidth: 200
-                        implicitHeight: 40
+                        report_window.open()
                     }
                 }
 
+
+                /*Action {
+                    text: "UI Tour"
+                    onTriggered: waitpop.open()
+                }*/
                 delegate: MenuItem {
-                    id: menuItem5
+                    id: menuItem6
 
                     contentItem: Text {
-                        text: menuItem5.text
-                        //font.family: font_family
-                        ///font.bold: bold_not
+                        text: menuItem6.text
+                        font.bold: true
                         font.italic: false
                         font.underline: false
                         font.strikeout: false
-                        //font.pixelSize: font_size // "Palatino Linotype"                    //opacity: enabled ? 1.0 : 0.3
-                        //color: menuItem5.highlighted ? "#ffffff" : "black"
+                        font.pixelSize: Math.min(root.width/70,root.height/60)  // "Palatino Linotype"                    //opacity: enabled ? 1.0 : 0.3
+                        color: menuItem6.highlighted ? "#ffffff" : "#21be2b"
                         horizontalAlignment: Text.AlignLeft
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -321,53 +342,109 @@ ApplicationWindow {
                         implicitWidth: 200
                         implicitHeight: 40
                         opacity: enabled ? 1 : 0.3
-                        //color: menuItem5.highlighted ? "black" : "#011026" //current_theme_color2 "#011026"
+                        color: menuItem6.highlighted ? "#21be2b" : "#011026"
                     }
                 }
                 background: Rectangle {
                     implicitWidth: 200
                     implicitHeight: 40
-                    //color: current_theme_color2 //"#ffffff"
-                    //border.color: "blue"
-                    //radius: 0.005*root.width // 5
+                    color: "#011026" //"#ffffff"
+                    border.color: "#21be2b"
+                    radius: 0.005*root.width  // 5
                 }
             }
-            delegate: MenuBarItem {
-                id: menuBarItem
+
+            delegate: MenuItem {
+                id: menuItem5
 
                 contentItem: Text {
-                    text: menuBarItem.text
-                    //font.family: font_family
-                    //font.bold: bold_not
-                    //font.italic: false
-                    //font.underline: false
-                    //font.strikeout: false
-                    //font.pixelSize: font_size // "Palatino Linotype"
-                    //opacity: enabled ? 1.0 : 0.3
-                    //color: menuBarItem.highlighted ? "black" : "white"
+                    text: menuItem5.text
+                    font.bold: true
+                    font.italic: false
+                    font.underline: false
+                    font.strikeout: false
+                    font.pixelSize: Math.min(root.width/70,root.height/60)  // "Palatino Linotype"                    //opacity: enabled ? 1.0 : 0.3
+                    color: menuItem5.highlighted ? "#ffffff" : "#21be2b"
                     horizontalAlignment: Text.AlignLeft
                     verticalAlignment: Text.AlignVCenter
-                    //elide: Text.ElideRight
                 }
 
                 background: Rectangle {
-                    implicitWidth: 40
+                    implicitWidth: 200
                     implicitHeight: 40
                     opacity: enabled ? 1 : 0.3
-                    //color: menuBarItem.highlighted ? "black" :  "#011026" //"transparent"
+                    color: menuItem5.highlighted ? "#21be2b" : "#011026"
                 }
+            }
+            background: Rectangle {
+                implicitWidth: 200
+                implicitHeight: 40
+                color: "#011026" //"#ffffff"
+                border.color: "#21be2b"
+                radius:  0.005*root.width  // 5
+            }
+        }
+        delegate: MenuBarItem {
+            id: menuBarItem
+
+            contentItem: Text {
+                text: menuBarItem.text
+                //font.family: font_family
+                font.bold: true
+                font.italic: false
+                font.underline: false
+                font.strikeout: false
+                font.pixelSize: Math.min(root.width/70,root.height/60) // "Palatino Linotype"
+                //opacity: enabled ? 1.0 : 0.3
+                color: menuBarItem.highlighted ? "#ffffff" : "#21be2b"
+                horizontalAlignment: Text.AlignLeft
+                verticalAlignment: Text.AlignVCenter
+                //elide: Text.ElideRight
             }
 
             background: Rectangle {
                 implicitWidth: 40
                 implicitHeight: 40
-
-            }
-
-            Component.onCompleted: {
-                //menu_height = menuBar.height
+                opacity: enabled ? 1 : 0.3
+                color: menuBarItem.highlighted ? "#21be2b" :"#011026" //"transparent"
             }
         }
+
+        background: Rectangle {
+            implicitWidth: 40
+            implicitHeight: 40
+            color: "#011026"
+
+
+            /*gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: "#00ff00"
+                } // Bright lime green
+                GradientStop {
+                    position: 0.3
+                    color: "#32cd32"
+                } // Lime green
+                GradientStop {
+                    position: 0.6
+                    color: "#228b22"
+                } // Forest green
+                GradientStop {
+                    position: 0.8
+                    color: "#006400"
+                } // Dark green
+                GradientStop {
+                    position: 1.0
+                    color: "#003300"
+                } // Very dark green
+            }*/
+            radius: 0.005*root.width // 5
+        }
+
+        Component.onCompleted: {
+            //menu_height = menuBar.height
+        }
+    }
     Dialog {
         id: rtspDialog
         modal: true
@@ -668,11 +745,11 @@ ApplicationWindow {
         connect_pop_status = false
     }
 
-    /*Dialog {
+    Dialog {
         id: message_template2
         z: 2
-        x: parent.width / 2.25
-        y: parent.height / 2.25
+        x: root.width / 2.25
+        y: root.height / 2.25
 
         Text {
             id: template_text2
@@ -694,7 +771,7 @@ ApplicationWindow {
             horizontalAlignment: Text.AlignHCenter
             font.pointSize: 0.006 * root.width
             style: Text.Sunken
-            anchors.top: template_text2.bottom
+            anchors.top: parent.top
             anchors.topMargin: 0.04 * parent.width
             anchors.left: parent.left
             anchors.leftMargin: 0.05 * parent.width
@@ -737,7 +814,7 @@ ApplicationWindow {
         onAccepted: {
             message_template2.close()
         }
-    }*/
+    }
 
     /*Dialog {
         id: message_template3
@@ -792,20 +869,20 @@ ApplicationWindow {
         onTriggered: {
         }
     }
-    /*Rectangle {
+    Rectangle {
         id: tray_5
-        anchors.right: tray_6.left
-        anchors.rightMargin: 0.005 * parent.height
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0.013 * parent.width
-        width: 0.07 * parent.width
-        //height: 0.1 * parent.height
-        height: 0.1125 * parent.height
-        color: "black"
-        opacity: 0.7
-        radius: 5
+        anchors.bottom: imageRect.bottom
+        anchors.bottomMargin: 0.005 * root.width
+        anchors.right: box_8.left
+        anchors.leftMargin:0.005*parent.width
+        anchors.rightMargin: 0.005 * parent.width
+        width: box_5.width
+        height: box_5.height
+        color: box_5.color
+        opacity: box_5.opacity
+        radius: box_5.radius
         //visible: mapContainer.height>root.height/2
-        Button {
+        /*Button {
             id: search3
             width: 0.025 * root.width
             height: 0.025 * root.width
@@ -859,8 +936,40 @@ ApplicationWindow {
 
 
             }
+        }*/
+    }
+
+    ColumnLayout {
+        anchors.top: tray_5.top
+               anchors.bottom: tray_5.bottom
+               anchors.left: tray_5.left
+               anchors.right: tray_5.right
+               spacing: 0.001 * parent.height
+        Text {
+            id: p12
+            Layout.fillWidth: true
+            Layout.fillHeight:true
+            text:roll.toFixed(1)
+            font.bold: true
+            style: Text.Sunken
+            font.pixelSize: Math.min(box_5.width / 3, box_5.height / 3)
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            color: "white"
         }
-    }*/
+        Text {
+            id: p13
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            text: qsTr("Roll(\u00B0)")
+            font.bold:true
+            font.pixelSize: Math.min(box_5.width / 7, box_5.height / 6)
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            color: "white"
+        }
+      }
+
     function tooltip_reset() {
         tooltip_template.x = 0
         tooltip_template.y = 0
@@ -983,16 +1092,16 @@ ApplicationWindow {
         }
     }
     Text {
-        id: timerText
-        color: "White"
-        visible: false
-        anchors.left: statusindicator2.right
-        anchors.leftMargin: 0.005 * root.width
-        anchors.bottom: imageRect.bottom
-        anchors.bottomMargin: 0.005 * parent.width
-        font.pixelSize: Math.min(root.width / 47, root.height / 37)
-        opacity: statusindicator2.opacity
-    }
+                      id: timerText
+                      color: "White"
+                      visible: statusindicator2.visible
+                      anchors.left: statusindicator2.right
+                      anchors.leftMargin:0.005*root.width
+                      anchors.bottom: statusindicator2.bottom
+                      //anchors.bottomMargin: 0.005*parent.width
+                      font.pixelSize:Math.min(root.width/47,root.height/37)
+                      opacity: statusindicator2.opacity
+                  }
     /*Rectangle {
         id: tray_3
         anchors.left: parent.left
@@ -1025,13 +1134,13 @@ ApplicationWindow {
     }
     Rectangle {
         id: modePanel
-        anchors.right: parent.right
-        anchors.rightMargin: 0.02 * parent.width
+        anchors.right: imageRect.right
+        anchors.rightMargin: 0.005 * root.width
         anchors.top: vikra.bottom
         anchors.topMargin: 0.1 * parent.height
         width: 0.085 * root.width
         height: 0.42 * root.height
-        radius: 18
+        radius: 0.005*root.width
         color: "#05090F"
         border.color: "#FFFFFF"
         border.width: 1
@@ -1185,8 +1294,8 @@ ApplicationWindow {
     }
         Rectangle {
         id: box_6
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0.013 * parent.width
+        anchors.bottom: imageRect.bottom
+        anchors.bottomMargin: 0.005 * root.width
         anchors.left: box_1.right
         anchors.leftMargin:0.005*parent.width
         anchors.rightMargin: 0.005 * parent.width
@@ -1195,7 +1304,7 @@ ApplicationWindow {
         color: box_5.color
         opacity: box_5.opacity
         radius: box_5.radius
-        /*gradient:Gradient{
+        /*gradient:Gradiet{
             GradientStop{
                 position: 0.0; color:"#111111"
             }
@@ -1238,8 +1347,8 @@ ApplicationWindow {
 
     Rectangle {
         id: box_7
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0.013 * parent.width
+        anchors.bottom: imageRect.bottom
+        anchors.bottomMargin: 0.005 * root.width
         anchors.left: box_6.right
         anchors.rightMargin:0.005*parent.width
         anchors.leftMargin: 0.005 * parent.width
@@ -1257,7 +1366,7 @@ ApplicationWindow {
         spacing:0.005*root.width
 
         Text {
-            id: p12
+            id: p14
             Layout.fillWidth: true
             text:yaw.toFixed(1)
             font.bold: true
@@ -1282,8 +1391,8 @@ ApplicationWindow {
         }
     Rectangle {
         id: box_1
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0.013 * parent.width
+        anchors.bottom: imageRect.bottom
+        anchors.bottomMargin: 0.005 * root.width
         anchors.left: box_5.right
         anchors.leftMargin: 0.005 * parent.width
         width: box_5.width
@@ -1322,8 +1431,8 @@ ApplicationWindow {
     }
     Rectangle {
             id: box_8
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 0.013 * parent.width
+            anchors.bottom: imageRect.bottom
+            anchors.bottomMargin: 0.005 * root.width
             anchors.right: box_5.left
             anchors.rightMargin: 0.005 * parent.width
             width: box_5.width
@@ -1331,24 +1440,20 @@ ApplicationWindow {
             color: box_5.color
             opacity: box_5.opacity
             radius: box_5.radius
-            gradient:Gradient{
-                GradientStop {
-                    position: 0.0; color:"#111111"}
-                GradientStop {
-                    position:1.0;color:"#333333"}
-            }
-    border.color:"black"
-    border.width:1
+    }
     ColumnLayout {
-    anchors.fill:parent
-    spacing: 0.001 * parent.height
+        anchors.top: box_8.top
+        anchors.bottom: box_8.bottom
+        anchors.left: box_8.left
+        anchors.right: box_8.right
+        spacing: 0.001 * parent.height
     Text {
         id: p1
         Layout.fillWidth: true
-        text: voltage
+        text: y6.toFixed(1)
         font.bold: true
         style: Text.Sunken
-        font.pixelSize: Math.min(box_5.width / 4, box_5.height / 4)
+        font.pixelSize: Math.min(box_5.width / 3, box_5.height / 3)
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
         color: "white"
@@ -1356,7 +1461,7 @@ ApplicationWindow {
     Text {
         id: p3
         Layout.fillWidth: true
-        text: qsTr("Voltage")
+        text: qsTr("Pitch(\u00B0)")
         font.bold:true
         font.pixelSize: Math.min(box_5.width / 7, box_5.height / 6)
         verticalAlignment: Text.AlignVCenter
@@ -1364,13 +1469,13 @@ ApplicationWindow {
         color: "white"
         }
     }
-}
+
     Rectangle {
         id: box_5
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0.013 * parent.width
+        anchors.bottom: imageRect.bottom
+        anchors.bottomMargin: 0.005 * root.width
         anchors.horizontalCenter: parent.horizontalCenter
-        //anchors.horizontalCenterOffset: -0.05*root.width
+        anchors.horizontalCenterOffset: -0.05*root.width
         width: 0.075 * root.width
         height: 0.1125 * root.height
         color: "black"
@@ -1717,115 +1822,132 @@ ApplicationWindow {
         id: row6
         Layout.fillWidth: pause_recording.visible ? true : false
     }
-    Button {
-        id: start_stop_recording
-        width:0.025*root.width
-        height:0.03*root.width
-        property bool pressed_not: false
-        anchors {
-            top: box_5.top
-            topMargin: 0.005 * root.width
-            horizontalCenter: box_5.horizontalCenter
-            horizontalCenterOffset: pause_recording.visible == false ? 0 : -0.25 * box_5.width
-        }
-        Behavior on anchors.horizontalCenterOffset {
-            PropertyAnimation {
-                duration: 300
-                easing.type: Easing.InOutQuad
+    Button
+        {
+            id:start_stop_recording
+            width:0.02*root.width
+            height:0.02*root.width
+            anchors
+            {
+                top:box_5.top
+                topMargin:0.005*root.width
+                horizontalCenter:box_5.horizontalCenter
+                horizontalCenterOffset:pause_recording.visible==false?0:-0.25*box_5.width
             }
-        }
-        visible: true
-        background: Rectangle {
-            color: "grey"
-            opacity: 0.5
-            radius: 100
-            //border.color: start_stop_recording.pressed_not ? "white" : "transparent"
-            //border.width: 0.0015 * root.width
-        }
-        contentItem: Canvas {
-            id: sta_sto2
-            anchors.fill: parent
-            contextType: "2d"
-            anchors.centerIn: parent
-            onPaint: {
-                var ctx = getContext("2d")
-                ctx.clearRect(0, 0, width, height)
-                if (!start_or_stop) {
-                    ctx.fillStyle = "#eadeda"
-                    ctx.beginPath()
-                    ctx.moveTo(0.3 * width, 0.2 * height)
-                    ctx.lineTo(0.3 * width, 0.8 * height)
-                    ctx.lineTo(0.8 * width, 0.5 * height)
-                    ctx.closePath()
-                    ctx.fill()
-                } else {
-                    ctx.fillStyle = "red"
-                    ctx.fillRect(0.3 * width, 0.25 * height, 0.45 * width,
-                                 0.5 * height)
-                }
-            }
-        }
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onClicked: {
 
-                start_or_stop = !start_or_stop
-                start_stop_recording.contentItem.requestPaint()
-                if (start_or_stop) {
-                    record_tool_text = "Stop and\nSave Recording"
-                    statusindicator2.color = "darkgreen"
-                    var date = new Date()
-                    var formattedDate = date.toLocaleString(
-                                Qt.locale("en_IN"), "dd.MM.yyyy-hh.mm.ss")
-                    var fileName = "/" + formattedDate //+ "_" + i
-                    var filePath = logFileDir //+ fileName
-                    filePath = filePath.replace("file:///", "")
-                    VideoStreamer.start_recording(filePath)
-                    timerText.visible = true
-                    start_Timer.start()
-                    pause_recording.visible = true
-                } else if (!start_or_stop) {
-                    record_tool_text = "Start\nVideo Recording"
-                    statusindicator2.color = "red"
-                    VideoStreamer.stop_recording()
-                    start_Timer.elapsedTime = 0
-                    timerText.text = "00:00:00"
-                    timerText.visible = false
-                    pause_recording.visible = false
-                    start_Timer.stop()
-                    start_Timer2.stop()
-                }
+            Behavior on anchors.horizontalCenterOffset {
+                PropertyAnimation { duration: 300; easing.type: Easing.InOutQuad }
             }
-            onPressed: {
+            visible: true
+            background: Rectangle
+            {
+                anchors.fill:parent
+                color:"grey"//"#011026"
+                opacity:0.5
+                radius:100
+            }
 
-                start_stop_recording.pressed_not = true
-            }
-            onReleased: {
-                start_stop_recording.pressed_not = false
-            }
-            onEntered: {
-                tooltip_set(start_stop_recording.x + mouseX,
-                            start_stop_recording.y - 0.05 * root.height,
-                            record_tool_text)
-            }
-            onExited: {
-                tooltip_reset()
-            }
+            contentItem: Canvas {
+                id:sta_sto
+                anchors.fill: parent
+                contextType: "2d"
+                anchors.centerIn: parent
+
+                 onPaint: {
+                     var ctx = getContext("2d");
+                     ctx.clearRect(0, 0, width, height); // Clear the canvas
+
+                     if (!start_or_stop) {
+                         ctx.fillStyle = "#eadeda";
+                         ctx.beginPath();
+                         ctx.moveTo(0.3 * width, 0.2 * height);
+                         ctx.lineTo(0.3 * width, 0.8 * height);
+                         ctx.lineTo(0.8 * width, 0.5 * height);
+                         ctx.closePath();
+                         ctx.fill();
+                                 } else { // Draw stop icon when recording
+                         ctx.fillStyle = "red";
+
+                                     ctx.fillRect(0.3 * width, 0.25 * height, 0.45 * width, 0.5 * height);
+                                 }
+
+                 }
+             }
+            MouseArea
+                {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked:
+                    {
+                        //console.log(start_or_stop)
+                        start_or_stop = !start_or_stop
+                        start_stop_recording.contentItem.requestPaint();
+
+                        if(start_or_stop)
+                        {
+                            record_tool_text="Stop and\nSave Recording"
+                        statusindicator2.color="darkgreen";
+                        VideoStreamer.start_recording();
+                            /*template_text2.text="Alert!!!"
+                            template_content2.text="Video has been saved successfully!!!"
+                            message_template2.open()*/
+                        //console.log("Record started")
+                        statusindicator2.visible=true
+                        start_Timer.start()
+                            pause_recording.visible=true
+                        }
+
+                        else if(!start_or_stop)
+                        {
+                            record_tool_text="Start\nVideo Recording"
+                            statusindicator2.color="red"
+                            VideoStreamer.stop_recording();
+                            //console.log("Recording stopped");
+                            start_Timer.elapsedTime=0
+                            timerText.text="00:00:00"
+                            statusindicator2.visible=false
+                            pause_recording.visible=false
+                            start_Timer.stop()
+
+
+                        }
+
+                    }
+                    onPressed:
+                            {
+                                start_status = !start_status
+                            }
+
+                    onReleased:
+                            {
+                                start_status = !start_status
+                            }
+
+                    onEntered:
+                    {
+
+                       tooltip_set(start_stop_recording.x+mouseX,start_stop_recording.y-0.05*root.height,record_tool_text)
+                    }
+
+                    onExited:
+                    {
+                        tooltip_reset()
+                    }
+                }
         }
-    }
     Button {
         id: pause_recording
-        width: pause_recording.visible ? 0.025 * root.width : 0
-        height: 0.025 * root.width
+        width: pause_recording.visible ? 0.02*root.width : 0
+        height:0.02*root.width
         visible: false
         anchors {
             top: box_5.top
-            topMargin: 0.0075 * parent.width
+            topMargin:0.005*root.width
             horizontalCenter: box_5.horizontalCenter
             horizontalCenterOffset: pause_recording.visible == false ? 0 : +0.25 * box_5.width
         }
         background: Rectangle {
+            anchors.fill:parent
             color: "grey" //"#011026"
             opacity: 0.5
             radius: 100
@@ -1883,10 +2005,10 @@ ApplicationWindow {
                 }
             }
             onPressed: {
-                capture_ss2.pressed_not = true
+                pause_recording.pressed_not = true
             }
             onReleased: {
-                capture_ss2.pressed_not = false
+                pause_recording.pressed_not = false
             }
             onEntered: {
                 tooltip_set(pause_recording.x + mouseX,
@@ -1902,20 +2024,21 @@ ApplicationWindow {
 
     Button {
         id: capture_ss2
-        width: 0.023 * root.width
-        height: 0.023 * root.width
+        width:0.02*root.width
+        height:0.02*root.width
         visible: true
         property bool pressed_not: false
         background: Rectangle {
             color: "grey"
+            anchors.fill:parent
             opacity: 0.5
             radius: 100
             border.color: capture_ss2.pressed_not ? "white" : "transparent"
-            border.width: 0.0015 * root.width
+            border.width: 0.005 * root.width
         }
         anchors {
-            bottom: box_5.bottom
-            bottomMargin: 0.0015 * parent.width
+            bottom:imageRect.bottom
+            bottomMargin:0.0075*root.width
             horizontalCenter: box_5.horizontalCenter
             horizontalCenterOffset: -0.01
                                     * box_5.width
