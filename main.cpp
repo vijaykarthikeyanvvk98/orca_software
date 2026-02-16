@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
     OpencvImageProvider *liveImageProvider(new OpencvImageProvider);
     Link link;
     link.create_directory();
+    //link.error_parsing();
     Receiver receiver;
     engine.rootContext()->setContextProperty("VideoStreamer",&videoStreamer);
     engine.rootContext()->setContextProperty("liveImageProvider",liveImageProvider);

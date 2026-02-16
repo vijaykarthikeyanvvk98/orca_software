@@ -5,7 +5,7 @@ JoystickController::JoystickController(QObject *parent)
     :QObject(parent),myJoystick(nullptr)
 {
     connect(&timer, &QTimer::timeout,this, &JoystickController::pollEvents);
-    connect(this,&JoystickController::leftaxisX,this,&JoystickController::testjoystickparameter);
+    //connect(this,&JoystickController::leftaxisX,this,&JoystickController::testjoystickparameter);
 }
 
 JoystickController::~JoystickController()
@@ -19,7 +19,7 @@ bool JoystickController::initialize()
         qDebug() << "SDL could not initialize error:" << SDL_GetError();
         return false;
     }
-    timer.start(16);
+    timer.start();
     return true;
 }
 void JoystickController::shutdown()
@@ -47,13 +47,58 @@ void JoystickController::pollEvents()
             myJoystick = SDL_OpenJoystick(event.jdevice.which);
             if (myJoystick)
             {
-                qDebug() << "Joystick Connected";
-                qDebug() << "Name:" << SDL_GetJoystickName(myJoystick);
+                name = SDL_GetJoystickName(myJoystick);
+                emit joystick_detected(name,true);
+                //qDebug() << "Joystick Connected";
+                //qDebug() << "Name:" << SDL_GetJoystickName(myJoystick);
             }
         }
         else if (event.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
         {
-            qDebug() << "Button pressed:" << event.jbutton.button;
+            //qDebug() << "Button pressed:" << event.jbutton.button;
+            switch(event.jbutton.button)
+            {
+            case 0:
+                emit mode(0);
+                //qDebug()<<"stabilize";
+                break;
+            case 1:
+                emit mode(1);
+                //qDebug()<<"depth";
+                break;
+            case 2:
+                emit mode(2);
+                //qDebug()<<"hold";
+                break;
+            case 3:
+                emit mode(3);
+                //qDebug()<<"manual";
+                break;
+            case 4:
+                emit mode(4);
+                //qDebug()<<"light 1";
+                break;
+            case 5:
+                emit mode(5);
+                //qDebug()<<"light 2";
+                break;
+            case 6:
+                disarm_status_value = !disarm_status_value;
+                emit arm_status(1,disarm_status_value);
+                //qDebug()<<"disarm";
+                break;
+            case 7:
+                arm_status_value = !arm_status_value;
+                emit arm_status(0,arm_status_value);
+                //qDebug()<<"arm";
+                break;
+            case 8:
+                break;
+            case 9:
+                break;
+            default:
+                break;
+            }
         }
         else if (event.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
         {
@@ -110,24 +155,51 @@ void JoystickController::pollEvents()
         }
         else if (event.type == SDL_EVENT_JOYSTICK_HAT_MOTION)
         {
+
             switch (event.jhat.value)
             {
-            case SDL_HAT_UP: qDebug() << "D-pad Up"; break;
-            case SDL_HAT_DOWN: qDebug() << "D-pad Down"; break;
-            case SDL_HAT_LEFT: qDebug() << "D-pad Left"; break;
-            case SDL_HAT_RIGHT: qDebug() << "D-pad Right"; break;
-            case SDL_HAT_LEFTUP: qDebug() << "D-pad Left + Up"; break;
-            case SDL_HAT_LEFTDOWN: qDebug() << "D-pad Left + Down"; break;
-            case SDL_HAT_RIGHTUP: qDebug() << "D-pad Right + Up"; break;
-            case SDL_HAT_RIGHTDOWN: qDebug() << "D-pad Right + Down"; break;
+            case SDL_HAT_UP:
+                if(gain_add>1)
+                    --gain_add;
+                //qDebug() << "D-pad Up"<<gain_add;
+                if(gain_add != 0)
+                    emit set_gain(gain_add);
+                break;
+            case SDL_HAT_DOWN:
+                if(gain_add<4)
+                    ++gain_add;
+                //qDebug() << "D-pad Down "<<gain_add;
+                if(gain_add !=0 && gain_add <=4)
+                    emit set_gain(gain_add);
+                break;
+            case SDL_HAT_LEFT:
+                qDebug() << "D-pad Left";
+                break;
+            case SDL_HAT_RIGHT:
+                //qDebug() << "D-pad Right";
+                break;
+            case SDL_HAT_LEFTUP:
+                //qDebug() << "D-pad Left + Up";
+                break;
+            case SDL_HAT_LEFTDOWN:
+                //qDebug() << "D-pad Left + Down";
+                break;
+            case SDL_HAT_RIGHTUP:
+                //qDebug() << "D-pad Right + Up";
+                break;
+            case SDL_HAT_RIGHTDOWN:
+                //qDebug() << "D-pad Right + Down";
+                break;
             default: break;
             }
         }
         else if (event.type == SDL_EVENT_JOYSTICK_REMOVED)
         {
-            qDebug() << "Joystick Disconnected";
+            //qDebug() << "Joystick Disconnected";
             SDL_CloseJoystick(myJoystick);
             myJoystick = nullptr;
+            emit joystick_detected(name,false);
+
         }
     }
 }

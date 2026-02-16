@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QDateTime>
 #include <QDir>
+#include <cmath>
 #include <QRandomGenerator>
 #include <QStandardPaths>
 #include "datalogger.h"
@@ -13,8 +14,8 @@ Link::Link()
     QObject::connect(this, &Link::_invokeWriteBytes, &receiver, &Receiver::senddatagram);
     connect(&receiver,&Receiver::datareceived,this, &Link::send_data_to_process);
     connect(this, &Link::data_processed, this,&Link::data_to_be_updated);
-    connect(&randomTimer, &QTimer::timeout,
-            this, &Link::generateRandomData);
+    /*connect(&randomTimer, &QTimer::timeout,
+            this, &Link::generateRandomData);*/
     heartbeatTimer = new QTimer(this);
     connect(heartbeatTimer, &QTimer::timeout, this, &Link::send_heart_beat);
     heartbeatTimer->start(static_cast<int>(round(1000.0 / FREQ_HEARTBEAT)));
@@ -26,24 +27,34 @@ Link::Link()
     connect(&joystickcontroller, &JoystickController::leftaxisY,this,&Link::set_joystick_values2);
     connect(&joystickcontroller, &JoystickController::rightaxisX,this,&Link::set_joystick_values3);
     connect(&joystickcontroller, &JoystickController::rightaxisY,this,&Link::set_joystick_values4);
+    connect(&joystickcontroller, &JoystickController::arm_status,this,&Link::arm_disarm);
+    connect(&joystickcontroller, &JoystickController::mode,this,&Link::set_mode);
+    connect(&joystickcontroller, &JoystickController::joystick_detected,this,&Link::joystick_controller_updated);
+    connect(&joystickcontroller, &JoystickController::set_gain,this,&Link::gain_update);
     create_directory();
 
-
+    //emit vehicle_ad_status(1);
 }
 Link::~Link()
 {
+    if(heartbeatTimer && heartbeatTimer->isActive())
+        heartbeatTimer->stop();
+    if(joystickTimer && heartbeatTimer->isActive())
+        joystickTimer->stop();
 
+    heartbeatTimer=nullptr;
+    joystickTimer=nullptr;
 }
 void Link::send_heart_beat()
 {
-    heartbeat_data.loggedState        = NOT_LOGGED;       // System logged state      ( enum : Logged_State)
-    heartbeat_data.vehicleID          = VEHICLE_ACR;      // Vehicle type             ( enum : Vehicle_ID)
-    heartbeat_data.armedState         = DISARMED;         // System armed state       ( enum : ARM_State)
-    heartbeat_data.systemMode         = MODE_HOLD;        // System mode state        (enum : System_Mode)
-    heartbeat_data.gps_fix            = GPS_NO_FIX;       // System gps fix           (enum : GPSFixStatus)
-    heartbeat_data.failsafe_flags     = FAILSAFE_NONE;    // System failsafe flags    (enum : Failsafe_flags)
-    heartbeat_data.system_health      = SYSTEM_HEALTH_OK; // System health flag       (enum : SystemHealth)
-    heartbeat_data.sensors_validity   = 0;
+    heartbeat_data.loggedState        = loggedState;       // System logged state      ( enum : Logged_State)
+    heartbeat_data.vehicleID          = vehicleID;      // Vehicle type             ( enum : Vehicle_ID)
+    heartbeat_data.armedState         = armedState;         // System armed state       ( enum : ARM_State)
+    heartbeat_data.systemMode         = systemMode;        // System mode state        (enum : System_Mode)
+    heartbeat_data.gps_fix            = gps_fix;       // System gps fix           (enum : GPSFixStatus)
+    heartbeat_data.failsafe_flags     = failsafe_flags;    // System failsafe flags    (enum : Failsafe_flags)
+    heartbeat_data.system_health      = system_health; // System health flag       (enum : SystemHealth)
+    heartbeat_data.sensors_validity   = sensors_validity;
     heartbeat_data.uptime_ms =static_cast<uint32_t>(QDateTime::currentDateTime().toMSecsSinceEpoch());
     VEDTP_Main heartbeat_send_packet;                                                   // for holding the main vedtp packet
 
@@ -81,50 +92,50 @@ void Link::send_data_to_process(QByteArray data)
         case VEDTP_INCOMPLETE:                                                      // packet is not fully arrived yes, just wait and do nothing
             break;
         case VEDTP_COMPLETE:                                                        // got the complete vedtp packet
-            qDebug()<<"DEVICEID"<<vedtp_recv.device;
+            //qDebug()<<"DEVICEID"<<vedtp_recv.device;
             switch (vedtp_recv.device){                                             // check the device id
                 case DEVICE_HEARTBEAT:                                              // if the device id matches the heartbeat device id,
                // qDebug()<<"Packet has Heartbeat Data.\n";
                 decode_status = decode_HEARTBEAT(&vedtp_recv, &heartbeat_data);         // decode the heartbeat packet
                 if(decode_status){                                                              // if decode is success,
-                    qDebug()<<"Heartbeat data decoded successfully.\n\n";                         // print or process the data
-                    qDebug()<<heartbeat_data.loggedState<<
-                        heartbeat_data.vehicleID<<
-                        heartbeat_data.armedState<<
-                        heartbeat_data.systemMode<<
-                        heartbeat_data.gps_fix<<
-                        heartbeat_data.failsafe_flags<<
-                        heartbeat_data.system_health<<
-                        heartbeat_data.sensors_validity<<
-                        heartbeat_data.uptime_ms;
+                    //qDebug()<<"Heartbeat data decoded successfully.\n\n";                         // print or process the data
+                    qDebug()<<"Logged:"<<heartbeat_data.loggedState<<
+                        "ID:"<<heartbeat_data.vehicleID<<
+                        "ARM:"<<heartbeat_data.armedState<<
+                        "Mode:"<<heartbeat_data.systemMode<<
+                        "GPS Fix:"<<heartbeat_data.gps_fix<<
+                        "Failsafe:"<<heartbeat_data.failsafe_flags<<
+                        "health:"<<heartbeat_data.system_health<<
+                        "validity:"<<heartbeat_data.sensors_validity<<
+                        "uptime:"<<heartbeat_data.uptime_ms;
                     emit data_processed(DEVICE_HEARTBEAT);
                 }
                 else {
-                    qDebug()<<"Heartbeat data decoding failed, Check the parameters.\n";
+                    //qDebug()<<"Heartbeat data decoding failed, Check the parameters.\n";
                 }
                 break;
                 //gps
                 case DEVICE_AHRS:
-                    qDebug()<<"Packet has AHRS Data.\n";
+                    //qDebug()<<"Packet has AHRS Data.\n";
                     decode_status = decode_AHRS(&vedtp_recv, &ahrs_data);         // decode the heartbeat packet
                 if(decode_status){                                                              // if decode is success,
-                    qDebug()<<"AHRS data decoded successfully.\n\n";                         // print or process the data
+                    /*qDebug()<<"AHRS data decoded successfully.\n\n";                         // print or process the data
                     qDebug()<<ahrs_data.yaw_deg<<
                         ahrs_data.pitch_deg<<
                         ahrs_data.roll_deg<<
-                        ahrs_data.uptime_ms;
+                        ahrs_data.uptime_ms;*/
                     emit data_processed(DEVICE_AHRS);
                 }
                 else {
-                    qDebug()<<"AHRS data decoding failed, Check the parameters.\n";
+                    //qDebug()<<"AHRS data decoding failed, Check the parameters.\n";
                 }
                 break;
                 //imu
                 case DEVICE_IMU:
-                    qDebug()<<"Packet has IMU data";
+                    //qDebug()<<"Packet has IMU data";
                     decode_status = decode_IMU(&vedtp_recv, &IMU_data);
                     if(decode_status){
-                        qDebug()<<"IMU data decoded successfully";
+                        /*qDebug()<<"IMU data decoded successfully";
                         qDebug()<<IMU_data.acceleration
                                  <<IMU_data.gyro
                                  <<IMU_data.magnetic
@@ -136,43 +147,43 @@ void Link::send_data_to_process(QByteArray data)
                                  <<IMU_data.gyrocalibration
                                  <<IMU_data.accelerometercalibration
                                  <<IMU_data.magnetometercalibration
-                                 <<IMU_data.uptime_ms;
+                                 <<IMU_data.uptime_ms;*/
                                     emit data_processed(DEVICE_IMU);
                     }
                     else{
-                        qDebug()<<"IMU data decoding failure";
+                        //qDebug()<<"IMU data decoding failure";
                     }
                     break;
                 case DEVICE_EXTERNAL_ATMOSPHERE:                                              // if the device id matches the heartbeat device id,
-                    qDebug()<<"Packet has EXTERNAL ATMOSPHERE DATA.\n";
+                    //qDebug()<<"Packet has EXTERNAL ATMOSPHERE DATA.\n";
                     decode_status = decode_EXTERNAL_ATMOSPHERE(&vedtp_recv, &External_atmosphere_data);         // decode the heartbeat packet
                     if(decode_status){                                                              // if decode is success,
-                        qDebug()<<"External data decoded successfully.\n\n";                         // print or process the data
-                        qDebug()<<External_atmosphere_data.temperature_C<<External_atmosphere_data.pressure_mbar<<
+                        //qDebug()<<"External data decoded successfully.\n\n";                         // print or process the data
+                        //qDebug()<<External_atmosphere_data.temperature_C<<External_atmosphere_data.pressure_mbar<<
 
                             // Air/Water temp
-                        External_atmosphere_data.depth_m<<               // From pressure sensor (e.g., MS5837)
-                        External_atmosphere_data.salinity_ppt;          // Parts per thousand (marine salinity)
+                        /*External_atmosphere_data.depth_m<<               // From pressure sensor (e.g., MS5837)
+                        External_atmosphere_data.salinity_ppt;  */        // Parts per thousand (marine salinity)
                         emit data_processed(DEVICE_EXTERNAL_ATMOSPHERE);
                     }
                     else {
-                    qDebug()<<"external atmosphere data decoding failed, Check the parameters.\n";
+                        //qDebug()<<"external atmosphere data decoding failed, Check the parameters.\n";
                      }
                 break;
                 case DEVICE_POWER_HEALTH:                                              // if the device id matches the heartbeat device id,
-                    qDebug()<<"Packet has Power Health DATA.\n";
+                    //qDebug()<<"Packet has Power Health DATA.\n";
                     decode_status = decode_POWER_HEALTH(&vedtp_recv, &Power_health_data);         // decode the heartbeat packet
                     if(decode_status){                                                              // if decode is success,
-                        qDebug()<<"Power Health data decoded successfully.\n\n";                         // print or process the data
-                        qDebug()<<Power_health_data.battery_voltage;          // Parts per thousand (marine salinity)
+                        //qDebug()<<"Power Health data decoded successfully.\n\n";                         // print or process the data
+                        //qDebug()<<Power_health_data.battery_voltage;          // Parts per thousand (marine salinity)
                         emit data_processed(DEVICE_POWER_HEALTH);
                     }
                     else {
-                        qDebug()<<"power health data decoding failed, Check the parameters.\n";
+                        //qDebug()<<"power health data decoding failed, Check the parameters.\n";
                     }
                 break;
                 case DEVICE_SONAR:                                              // if the device id matches the heartbeat device id,
-                    qDebug()<<"Packet has Sonar Data.\n";
+                    //qDebug()<<"Packet has Sonar Data.\n";
                     decode_status = decode_SONAR(&vedtp_recv, &sonar_data);         // decode the heartbeat packet
                     if(decode_status){                                                              // if decode is success,
                         qDebug()<<"Sonar data decoded successfully.\n\n";                         // print or process the data
@@ -200,14 +211,14 @@ void Link::send_data_to_process(QByteArray data)
                 case DEVICE_DEVICE_ERROR:                                              // if the device id matches the heartbeat device id,
                 decode_status = decode_DEVICE_ERROR(&vedtp_recv, &error_data);         // decode the heartbeat packet
                 if(decode_status){                                                              // if decode is success,
-                    qDebug()<<"Device error decoded successfully.\n\n";                         // print or process the data
-                    qDebug()<<"error data :"<<error_data.device_id<<error_data.error_type<<
+                    //qDebug()<<"Device error decoded successfully.\n\n";                         // print or process the data
+                    qDebug()<<"Error data :"<<error_data.device_id<<error_data.error_type<<
                         error_data.severity<<error_data.flags<<
                         error_data.uptime_ms;
                     emit data_processed(DEVICE_DEVICE_ERROR);
                 }
                 else {
-                    qDebug()<<"Heartbeat data decoding failed, Check the parameters.\n";
+                    qDebug()<<"Error data decoding failed, Check the parameters.\n";
                 }
                 break;
                 case DEVICE_COMMAND_ACK:                                              // if the device id matches the heartbeat device id,
@@ -289,10 +300,14 @@ void Link::heart_beat_parsing()
     {
         login("VOTPL","VOTPL");
     }
+    emit vehicle_ad_status(armedState);
+    emit vehicle_mod_status(systemMode);
 }
 void Link::AHRS_parsing()
 {
    // if (yawTimer.elapsed() >= 1000) {
+    ahrs_data.yaw_deg +=90;
+   ahrs_data.yaw_deg = std::fmod(ahrs_data.yaw_deg, 360.0f);;
         setYaw_value(ahrs_data.yaw_deg);
        // yawTimer.restart();
     //}
@@ -316,8 +331,8 @@ void Link::error_parsing()
     // setErrorType( error_data.error_type);
     // setseverity(error_data.severity);
     // setuptimemserror(error_data.uptime_ms);
-     qDebug()<<"Deive Id error "<<error_data.device_id;
-    switch(error_data.device_id){
+     //qDebug()<<"Deive Id error "<<error_data.device_id;
+    /*switch(error_data.device_id){
     case DEVICE_HEARTBEAT:
         //error_device = Device_HEARTBEAT;
         device_id = DEVICE_HEARTBEAT;
@@ -384,7 +399,9 @@ void Link::error_parsing()
         error_type=DEVICE_ERROR_UNKNOWN;
        // emit
         break;
-    }
+    }*/
+    device_id=error_data.device_id;
+    error_type=error_data.error_type;
     emit errordetected();
     // switch(error_data.severity)
     // {
@@ -507,9 +524,105 @@ quint64 Link:: uptimeMsAck() const
     return uptime_ms_ack;
 }
 
+void Link::set_mode(int mode)
+{
+    switch(mode)
+    {
+    case 0:
+        sendMode(MODE_AUTO);
+        break;
+    case 1:
+        sendMode(MODE_HOLD);
+        break;
+    case 2:
+        sendMode(MODE_MANUAL);
+        break;
+    case 3:
+        sendMode(MODE_RTL);
+        break;
+    default:
+        sendMode(MODE_HOLD);
+        break;
+    }
+}
+
+void Link::gain_update(int value)
+{
+    gain_plus = value;
+    //qDebug()<<gain_plus;
+    switch (gain_plus) {
+    case 4:
+        emit gain_status(25);
+        break;
+    case 3:
+        emit gain_status(50);
+        break;
+    case 2:
+        emit gain_status(75);
+        break;
+    case 1:
+        emit gain_status(100);
+        break;
+    default:
+        emit gain_status(25);
+        break;
+    }
+}
+
+void Link::joystick_controller_updated(QString name,bool status)
+{
+    //qDebug()<<name;
+    joystick_changed(status);
+}
+
+void Link::arm_disarm(int mode, bool value)
+{
+    switch(mode)
+    {
+    case 0:
+        //qDebug()<<"arm";
+        arm_status = ARMED;
+        send_arm(arm_status);
+        break;
+    case 1:
+        arm_status = DISARMED;
+        send_arm(arm_status);
+        //qDebug()<<"Disarm";
+        break;
+    default:
+        break;
+    }
+}
+
+void Link::send_arm(ARM_State state)
+{
+    COMMAND_Packet cmd{};
+    cmd.id=CMD_ARM_DISARM;
+    cmd.target=DEVICE_COMMAND;
+    cmd.flags=0;
+    cmd.param_count=1;
+    cmd.param[0]=state;
+    cmd.uptime_ms   = QDateTime::currentMSecsSinceEpoch();
+    qDebug()<<"Arm Send:"<<state;
+
+    if (!encode_COMMAND(&vedtp, &cmd)) {
+        //qDebug() << "Login successfully";
+        return;
+    }
+    emit _invokeWriteBytes(
+        QByteArray(reinterpret_cast<char*>(&vedtp),
+                   sizeof(VEDTP_Main))
+        );//cmd.param[0]=static_cast<>
+}
+
 int Link::mapvalue(double value, int InputMin, int InputMax, int outputMin,int outputMax)
 {
     //qDebug()<<"Mapped Value";
+    //delta_gain = (1900-1500)/gain_plus;
+    delta_gain = 400/gain_plus;
+    outputMax = 1500+ delta_gain;
+    outputMin = 1500- delta_gain;
+    //qDebug()<<gain_plus<<delta_gain<<outputMax<<outputMin;
     double mappedValue =
         (value - InputMin) * (outputMax - outputMin)
             / static_cast<double>(InputMax - InputMin)
@@ -737,12 +850,12 @@ void Link::set_joystick_values(double y_axis_, double x_axis_)
 
     y_axis_left = mapvalue(y_axis_,InputMin, InputMax, outputMin, outputMax);
     x_axis_left = mapvalue(x_axis_,InputMin, InputMax, outputMin, outputMax);
-    qDebug()<<"set_joystick_values";
+    //qDebug()<<"set_joystick_values";
     //x_axis_left = static_cast<uint16_t>(x_axis_);
     //x_axis_right = static_cast<uint16_t>(x_axis1_);
     //y_axis_right = static_cast<uint16_t>(y_axis1_);
-    qDebug()<<"y_axis_left"<<y_axis_left;
-    qDebug()<<"x_axis_left"<<x_axis_left;
+    //qDebug()<<"y_axis_left"<<y_axis_left;
+    //qDebug()<<"x_axis_left"<<x_axis_left;
     //qDebug()<<x_axis_right;
     //qDebug()<<y_axis_right;
 }
@@ -750,25 +863,25 @@ void Link::set_joystick_values2(double y_axis_, double x_axis_)
 {
     y_axis_left = mapvalue(y_axis_,InputMin, InputMax, outputMin, outputMax);
     x_axis_left = mapvalue(x_axis_, InputMin, InputMax, outputMin, outputMax);
-    qDebug()<<"set_joystick_values2";
+    /*qDebug()<<"set_joystick_values2";
    qDebug()<<"y_axis_left"<<y_axis_left;
-    qDebug()<<"x_axis_left"<<x_axis_left;
+    qDebug()<<"x_axis_left"<<x_axis_left;*/
 }
 void Link::set_joystick_values3(double  y_axis_, double x_axis_)
 {
     y_axis_right = mapvalue(y_axis_, InputMin, InputMax, outputMin, outputMax);
     x_axis_right = mapvalue(x_axis_, InputMin, InputMax, outputMin, outputMax);
-    qDebug()<<"set_joystick_values3";
+    /*qDebug()<<"set_joystick_values3";
     qDebug()<<"y_axis_right"<<y_axis_right;
-    qDebug()<<"x_axis_right"<<x_axis_right;
+    qDebug()<<"x_axis_right"<<x_axis_right;*/
 }
 void Link::set_joystick_values4(double y_axis_, double x_axis_)
 {
     y_axis_right = mapvalue(y_axis_,InputMin, InputMax, outputMin, outputMax);
     x_axis_right = mapvalue(x_axis_,InputMin, InputMax, outputMin, outputMax);
-    qDebug()<<"set_joystick_values4";
+    /*qDebug()<<"set_joystick_values4";
     qDebug()<<"y_axis_right"<<y_axis_right;
-    qDebug()<<"x_axis_right"<<x_axis_right;
+    qDebug()<<"x_axis_right"<<x_axis_right;*/
 }
 void Link::joystick_activated(int mode, bool value)
 {
@@ -801,7 +914,7 @@ void Link::sendMode(System_Mode mode)
                    sizeof(VEDTP_Main))
         );
 
-qDebug() << "[MODE] Sent mode:" << mode;
+//qDebug() << "[MODE] Sent mode:" << mode;
 }
 void Link::setManualMode()
 {
@@ -849,7 +962,6 @@ void Link::login(QString username, QString password)
     VEDTP_Main heartbeat_send_packet;                                                   // for holding the main vedtp packet
 
     if (!encode_COMMAND(&vedtp, &cmd)) {
-        qDebug() << "Login successfully";
         return;
     }
     emit _invokeWriteBytes(

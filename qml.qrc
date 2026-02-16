@@ -48,5 +48,9 @@
         <file>images/vikra.png</file>
         <file>images/vikra_2.jpeg</file>
         <file>images/vikra_2.png</file>
+        <file>images/error.svg</file>
+        <file>images/warning.png</file>
+        <file>images/joystick.png</file>
+        <file>images/no_joystick.png</file>
     </qresource>
 </RCC>

@@ -3,7 +3,7 @@
 #include <QUdpSocket>
 Receiver::Receiver() {
     socket=new QUdpSocket(this);
-    if (!socket->bind(QHostAddress(Address), port)) {
+    if (!socket->bind(QHostAddress::AnyIPv4, 10050)) {
         qDebug() << "Failed to bind UDP socket to" << Address << ":" << port;
     }
     connect(socket,& QUdpSocket::readyRead, this, &Receiver::receivedatagram);
@@ -15,8 +15,8 @@ void Receiver::senddatagram(QByteArray data)
 {
    // qDebug()<<data.toHex();
     //socket->writeDatagram(data,Address,port);
-    int message = socket->writeDatagram(data,QHostAddress("192.168.1.12"),10050);
-    //qDebug()<<"messag"<<message;
+    int message = socket->writeDatagram(data,QHostAddress("192.168.56.2"),10050);
+    //qDebug()<<"message"<<message;
 }
 
 void Receiver::receivedatagram()

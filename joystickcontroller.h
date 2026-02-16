@@ -19,6 +19,10 @@ signals:
     void leftaxisY(double value1, double value2);
     void rightaxisX(double value1, double value2);
     void rightaxisY(double value1, double value2);
+    void arm_status(int,bool);
+    void mode(int);
+    void set_gain(int);
+    void joystick_detected(QString,bool);
 private slots:
     void pollEvents();
     void testjoystickparameter(double value1, double value2);
@@ -31,6 +35,10 @@ private:
     //int SDL_NumJoysticks();
     QTimer timer;
     SDL_Joystick *myJoystick;
+    bool arm_status_value=false;
+    bool disarm_status_value=false;
+    QString name="Unknown";
+    int gain_add=4;
 };
 
 #endif // JOYSTICKCONTROLLER_H

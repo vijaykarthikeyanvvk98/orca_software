@@ -40,10 +40,10 @@ void VideoStreamer::catchFrame(cv::Mat emittedFrame)
 
     if (recording_status && video.isOpened())
     {
-        if (frame.cols != frame_width || frame.rows != frame_height)
+        /*if (frame.cols != frame_width || frame.rows != frame_height)
         {
             cv::resize(frame, frame, cv::Size(frame_width, frame_height));
-        }
+        }*/
 
         video.write(frame);
     }
@@ -78,7 +78,7 @@ void VideoStreamer::closeCamera()
 void VideoStreamer::streamerThreadSlot()
 {
     cv::Mat tempFrame;
-    while (1) {
+    while (!QThread::currentThread()->isInterruptionRequested()) {
         cap>>tempFrame;
     if(tempFrame.data)
             emit emitThreadImage(tempFrame);
@@ -98,7 +98,7 @@ void VideoStreamer::changeCamera()
         qDebug()<<"camera changed to rtsp";
     }*/
     openVideoCamera(
-        "rtsp://admin:Vikra@123@192.168.56.50:554/video/live?channel=1&subtype=0"
+        "rtsp://admin:vikra@123@192.168.56.50:554/video/live?channel=1&subtype=0"
         );
 }
 void VideoStreamer::start_recording()

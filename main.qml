@@ -26,25 +26,69 @@ ApplicationWindow {
             err_data = link.errorcatched()
             err_device = err_data[0];
             error_type = err_data[1];
-            error_text = err_device+error_type;
+            //error_text = err_device+error_type;
 
-            console.log("Error Data:", err_data)
+            //console.log("Error Data:", err_data)
                     console.log("Device:", err_device)
                     console.log("Error Type:", error_type)
                     console.log("Error Text:", error_text)
         }
 
+        function onJoystick_changed(value)
+        {
+            //console.log(value)
+            joystick_status=value;
+        }
+
+        function onVehicle_ad_status(value)
+        {
+            ad_status =value
+            //console.log("Hello",ad_status)
+        }
+
+        function onsystemMode(value)
+        {
+           mod_status=value
+        }
+
+        function onGain_status(value)
+        {
+               gain_text = value.toString() + "%"
+        }
+    }
+
+    function getModeText() {
+        switch (mod_status) {
+        case 0:
+            return "HOLD"
+        case 1:
+            return "MANUAL"
+        case 2:
+            return "DEPTH"
+        case 3:
+            return "STABILIZE"
+        case 4:
+            return "RTS"
+        default:
+            return "HOLD"
+        }
     }
     signal map_image_Captured
     property string vid_path: ""
     property var err_data: [];
+    property bool joystick_status: false
     property var help_text_Array: []
     property int err_device:0;
     property int error_type:0;
     property string error_text:"";
-    property string err_text:"";
-    property string err_warning_path:"";
+    property string err_text:"No Error";
+    property string err_warning_path:"qrc:/resources/images/warning.png";
+    property int ad_status: 0
+    property string ad_text:ad_status?"Armed": "Disarmed"
+    property int mod_status: 0
+    property string mod_text: getModeText()
 
+    property string gain_text: "25%"
     property real y6:link ? link.pitch_deg: 0.0
     property bool edit_not: false
     property color neonblue: "#00FFFF"
@@ -178,6 +222,8 @@ ApplicationWindow {
                 }
             }
 
+
+
             delegate: MenuItem {
                 id: menuItem3
 
@@ -213,7 +259,7 @@ ApplicationWindow {
         }
 
         Menu {
-            title:"Camera Settigs"
+            title:"Settings"
 
             Action {
                                            text: "Web Camera"
@@ -224,7 +270,11 @@ ApplicationWindow {
                                        }
                             Action{
                                 text:"RTSP Camera"
-                                onTriggered: rtspDialog.open()
+                                onTriggered:
+                                {
+                                    VideoStreamer.openVideoCamera("rtsp://admin:vikra@123@192.168.56.50:554/cam/realmonitor?channel=1&subtype=0")
+                                    opencvImage.visible = true
+                                }
                             }
 
             delegate: MenuItem {
@@ -540,8 +590,15 @@ ApplicationWindow {
         }
     }
     Component.onCompleted: {
+        //err_rect.visible = true
+        //start_Timer5.start()
+        link.sendModeCommand(0)
+        //mod_text=0
+
         //VideoStreamer.openVideoCamera( "rtsp://admin:Vikra@123@192.168.56.50:554/video/live?channel=1&subtype=0");
-        opencvImage.visible = true
+        //opencvImage.visible = true
+        //VideoStreamer.openVideoCamera("rtsp://admin:vikra@123@192.168.56.50:554/cam/realmonitor?channel=1&subtype=0")
+        //opencvImage.visible = true
         /*fileModel.append({
                              "fileName": "C:/Users/Vijay/Documents/rough.txt"
                          })*/
@@ -1137,18 +1194,19 @@ ApplicationWindow {
         anchors.right: imageRect.right
         anchors.rightMargin: 0.005 * root.width
         anchors.top: vikra.bottom
-        anchors.topMargin: 0.1 * parent.height
+        anchors.topMargin: 0.1 * root.height
         width: 0.085 * root.width
         height: 0.42 * root.height
         radius: 0.005*root.width
         color: "#05090F"
         border.color: "#FFFFFF"
-        border.width: 1
+        border.width: 0.001*root.width
         z: 10
+        visible: ad_status?true:false
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 0.015 * root.width
-            spacing: 0.015 * root.height
+            anchors.margins: 0.005 * root.width
+            spacing: 0.005 * root.width
 
             ROVButton {
                 text: "HOLD"
@@ -1178,14 +1236,14 @@ ApplicationWindow {
     component ROVButton: Rectangle {
         id: btn
 
-        property string text
-        property int index
+        property string text:"HOLD"
+        property int index:0
         property color baseColor
 
         Layout.fillWidth: true
         Layout.preferredHeight: parent.height / 4.6
 
-        radius: height * 0.30
+        radius: 0.005*root.width
         scale: mouseArea.pressed ? 0.95 : 1.0
 
         Behavior on scale {
@@ -1223,7 +1281,8 @@ ApplicationWindow {
 
             onClicked: {
                 activeMode = btn.index
-                console.log("Mode selected:", btn.text)
+                //console.log("Mode selected:", btn.text)
+                //mod_text=btn.text
                 link.sendModeCommand(btn.index)
             }
 
@@ -1299,7 +1358,7 @@ ApplicationWindow {
         anchors.left: box_1.right
         anchors.leftMargin:0.005*parent.width
         anchors.rightMargin: 0.005 * parent.width
-        width: box_5.width
+        width: box_5.width+0.01*root.width
         height: box_5.height
         color: box_5.color
         opacity: box_5.opacity
@@ -2519,129 +2578,215 @@ ApplicationWindow {
                    }
                }
            }
+
            Rectangle {
-                   id: err_rect
-                   //text: "No error"
-                   //anchors.top:root.top
-                   parent: root.menuBar // Set main menu toolbar as parent for tool button
-                   anchors.top:parent.top
-                   anchors.horizontalCenter: parent.horizontalCenter
-                   //anchors.topMargin: model.height>parent.height/2?0:0.01*parent.height
-                   //x:parent.width/2
-                   //anchors.horizontalCenter: parent.horizontalCenter
-                   //anchors.verticalCenter: parent.verticalCenter
-                   width: Math.min(parent.width * 0.35, 420)
-                       height: parent.height * 0.75
-                       radius: 6
-                   //visible: false
-                   //anchors.leftMargin:cam.height<root.height/2?0.025*parent.width:0.075*parent.width
-                   //font.pixelSize:Math.min(root.width/65,root.height/45)//main_page.model.height>parent.height/2?Math.min(root.width/75,root.height/55):Math.min(root.width/55,root.height/35)
-                   color: "transparent"
-                   visible: err_text !== ""
+                  id: err_rect
+                  //text: "No error"
+                  parent: root.menuBar // Set main menu toolbar as parent for tool button
+                  //anchors.top:parent.top
+                  //anchors.topMargin: model.height>parent.height/2?0:0.01*parent.height
+                  //x:parent.width/2
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  anchors.verticalCenter: parent.verticalCenter
+                  width: 0.25 * parent.width
+                  height: parent.height
+                  radius: 5
+                  visible:false
+                  //anchors.leftMargin:cam.height<root.height/2?0.025*parent.width:0.075*parent.width
+                  //font.pixelSize:Math.min(root.width/65,root.height/45)//main_page.model.height>parent.height/2?Math.min(root.width/75,root.height/55):Math.min(root.width/55,root.height/35)
+                  color: "transparent"
 
-                      clip: true
-                   anchors.centerIn: parent
 
-                   /*gradient: Gradient {
-                                                GradientStop { position: 0.0; color: "lightsteelblue" }
-                                                GradientStop { position: 1.0; color: "blue" }
-                                            }*/
-                   //z:1
-                   RowLayout {
-                       anchors.fill: parent
+                  /*gradient: Gradient {
+                                               GradientStop { position: 0.0; color: "lightsteelblue" }
+                                               GradientStop { position: 1.0; color: "blue" }
+                                           }*/
+                  //z:1
+                  RowLayout {
+                      width: parent.width
+                      height: parent.height
+                      spacing: 0.005 * parent.width
 
-                      // width: parent.width
-                     //  height: parent.height
-                       spacing: 0.005 * parent.width
+                      Item {
+                          width: parent.width
+                          height: parent.height
+                          Layout.fillWidth: true
+                          Layout.fillHeight: true
+                          Image {
+                              id: err_symbol
+                              source: err_warning_path
+                              //Layout.alignment: Qt.AlignVCenter
+                              sourceSize.width: parent.width
+                              sourceSize.height: parent.height
+                          }
+                      }
 
-                       Item {
-                           width: parent.width
-                           height: parent.height
-                           Layout.fillWidth: true
-                           Layout.fillHeight: true
-                           Image {
-                               id: err_symbol
-                               source: err_warning_path
-                               //Layout.alignment: Qt.AlignVCenter
-                              // sourceSize.width: parent.width
-                               //sourceSize.height: parent.height
-                               fillMode : Image.PreserveAspectFit
-                               Layout.preferredWidth:height
-                               Layout.preferredHeight:height
-                               //yout.fillHeight: true
-                           }
-                       }
+                      Text {
+                          id: err_msg_text
+                          text: err_text
+                          font.bold: true
+                          Layout.fillWidth: true
+                          Layout.fillHeight: true
+                          verticalAlignment: Text.AlignVCenter
+                          horizontalAlignment: Text.AlignHCenter
+                          width: parent.width
+                          height: parent.height
+                          color: "yellow"
+                          font.pixelSize: Math.min(root.width / 65, root.height / 45)
+                          //font.family: font_family
+                          //font.bold: bold_not
+                          font.italic: false
+                          font.underline: false
+                          font.strikeout: false
+                      }
+                  }
 
-                       Text {
-                           id: err_msg_text
-                           text: err_text
-                           font.bold: true
-                           Layout.fillWidth: true
-                          // Layout.fillHeight: true
-                           verticalAlignment: Text.AlignVCenter
-                           horizontalAlignment: Text.AlignHCenter
-                           width: parent.width
-                           height: parent.height
-                           color: "yellow"
-                           font.pixelSize: Math.min(root.width / 65, root.height / 45)
-                           //font.family: font_family
-                           //font.bold: bold_not
-                           font.italic: false
-                           font.underline: false
-                           font.strikeout: false
-                       }
-                   }
+                  property bool isBlink: false
 
-                   property bool isBlink: false
+                  // Start blinking when isBlink changes
+                  onIsBlinkChanged: {
+                      if (isBlink)
+                          startBlinkAnimation()
+                      else
+                          stopBlinkAnimation()
+                  }
 
-                   // Start blinking when isBlink changes
-                   onIsBlinkChanged: {
-                       if (isBlink)
-                           startBlinkAnimation1()
-                       else
-                           stopBlinkAnimation1()
-                   }
+                  function startBlinkAnimation() {
+                      blinkAnimation1.running = true
+                  }
 
-                   function startBlinkAnimation1() {
-                       blinkAnimation1.running = true
-                   }
+                  function stopBlinkAnimation() {
+                      blinkAnimation1.running = false
+                      opacity = 1 // Ensure the indicator is visible after stopping
+                  }
 
-                   function stopBlinkAnimation1() {
-                       blinkAnimation1.running = false
-                       opacity = 1 // Ensure the indicator is visible after stopping
-                   }
+                  SequentialAnimation {
+                      id: blinkAnimation1
+                      loops: Animation.Infinite
 
-                   SequentialAnimation {
-                       id: blinkAnimation1
-                       loops: Animation.Infinite
+                      PropertyAnimation {
+                          target: err_rect
+                          property: "visible"
+                          from: true
+                          to: false
+                          duration: 500
+                      }
+                      PropertyAnimation {
+                          target: err_rect
+                          property: "visible"
+                          from: false
+                          to: true
+                          duration: 300
+                      }
+                  }
 
-                       PropertyAnimation {
-                           target: err_rect
-                           property: "visible"
-                           from: true
-                           to: false
-                           duration: 500
-                       }
-                       PropertyAnimation {
-                           target: err_rect
-                           property: "visible"
-                           from: false
-                           to: true
-                           duration: 300
-                       }
-                   }
+                  Timer {
+                      id: start_Timer5
+                      interval: 750 // Timer interval in milliseconds
+                      //running: true // Start the timer when the application starts
+                      //repeat: true
 
-                   Timer {
-                       id: start_Timer5
-                       interval: 750 // Timer interval in milliseconds
-                       running: false // Start the timer when the application starts
-                       repeat: true
+                      property int elapsedTime: 1 // Elapsed time in seconds
 
-                       property int elapsedTime: 1 // Elapsed time in seconds
+                      onTriggered: {
+                          err_rect.isBlink = !err_rect.isBlink // Toggle blinking
+                      }
+                  }
+           }
 
-                       onTriggered: {
-                           err_rect.isBlink = !err_rect.isBlink // Toggle blinking
-                       }
-                   }
-               }
+           Text {
+               id: arm_disarm_text
+               text: ad_text
+               font.bold: true
+               parent: root.menuBar // Set main menu toolbar as parent for tool button
+               anchors.right: parent.right
+               anchors.rightMargin: 0.15*root.width
+               verticalAlignment: Text.AlignVCenter
+               //horizontalAlignment: Text.AlignHCenter
+               //width: parent.width
+               height: parent.height
+               color: "yellow"
+               font.pixelSize: Math.min(root.width / 65, root.height / 45)
+               //font.family: font_family
+               //font.bold: bold_not
+               font.italic: false
+               font.underline: false
+               font.strikeout: false
+           }
+
+           Image {
+               id: joy_symbol
+               source: "qrc:/resources/images/joystick.png"
+               parent: root.menuBar
+               anchors.right:parent.right
+               anchors.rightMargin: 0.075*root.width
+               //anchors.left: err_rect.right
+               //anchors.leftMargin: 0.005*root.width
+               anchors.verticalCenter: parent.verticalCenter
+               //sourceSize.width: 0.05*parent.width
+               //sourceSize.height: 0.05*parent.height
+               width: 0.025*parent.width
+               height:0.9*parent.height
+               opacity:joystick_status?1.0: 0.5
+           }
+
+           Text {
+               id: mode_text
+               text: mod_text
+               font.bold: true
+               parent: root.menuBar // Set main menu toolbar as parent for tool button
+               anchors.right: parent.right
+               anchors.rightMargin: 0.01*root.width
+               verticalAlignment: Text.AlignVCenter
+               //horizontalAlignment: Text.AlignHCenter
+               //width: parent.width
+               height: parent.height
+               color: "yellow"
+               font.pixelSize: Math.min(root.width / 65, root.height / 45)
+               //font.family: font_family
+               //font.bold: bold_not
+               font.italic: false
+               font.underline: false
+               font.strikeout: false
+           }
+
+           Text {
+               id: gain_text2
+               text: gain_text
+               anchors.right: err_rect.left
+               font.bold: true
+               parent: root.menuBar // Set main menu toolbar as parent for tool button
+               anchors.rightMargin: 0.01*root.width
+               verticalAlignment: Text.AlignVCenter
+               //horizontalAlignment: Text.AlignHCenter
+               //width: parent.width
+               height: parent.height
+               color: "yellow"
+               font.pixelSize: Math.min(root.width / 65, root.height / 45)
+               //font.family: font_family
+               //font.bold: bold_not
+               font.italic: false
+               font.underline: false
+               font.strikeout: false
+           }
+
+           Text {
+               id: gain_text3
+               text: "Gain:"
+               anchors.right: gain_text2.left
+               font.bold: true
+               parent: root.menuBar // Set main menu toolbar as parent for tool button
+               anchors.rightMargin: 0.01*root.width
+               verticalAlignment: Text.AlignVCenter
+               //horizontalAlignment: Text.AlignHCenter
+               //width: parent.width
+               height: parent.height
+               color: "yellow"
+               font.pixelSize: Math.min(root.width / 65, root.height / 45)
+               //font.family: font_family
+               //font.bold: bold_not
+               font.italic: false
+               font.underline: false
+               font.strikeout: false
+           }
 }

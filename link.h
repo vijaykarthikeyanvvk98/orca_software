@@ -90,8 +90,17 @@ signals:
     void flagsAckChanged(uint8_t);
     void messageChanged(const QString &);
     void uptimeMsAckChanged(quint64);
+    void joystick_changed(bool);
+    void vehicle_ad_status(int);
+    void vehicle_mod_status(int);
+    void gain_status(int);
     //void sendBytes(const QByteArray&);
 public slots:
+    void set_mode(int);
+    void gain_update(int);
+    void joystick_controller_updated(QString,bool);
+    void arm_disarm(int,bool);
+    void send_arm(ARM_State);
     void login(QString username, QString password);
     int mapvalue(double,int,int,int,int);
     void send_heart_beat();
@@ -151,7 +160,7 @@ private:
     Receiver receiver;
     QTimer *timer=nullptr;
     uint8_t loggedState=0;
-    uint8_t vehicleID=0;
+    uint8_t vehicleID=VEHICLE_ROV6;
     uint8_t armedState=0;
     uint8_t systemMode=0;
     uint8_t gps_fix=0;
@@ -215,6 +224,7 @@ private:
     IMU_Packet IMU_data;
     //COMMAND_Packet ;
     COMMAND_ACK_Packet acknowledgement_data;
+    ARM_State arm_status;
     QTimer randomTimer;
     QElapsedTimer yawTimer;
     QString log_path="";
@@ -232,5 +242,7 @@ private:
     int outputMin=1100, outputMax=1900, InputMin=-1, InputMax=1;
     QString username ="";
     QString password ="";
+    int gain_plus=4,gain_minus=1;
+    int delta_gain=0;
 };
 #endif
