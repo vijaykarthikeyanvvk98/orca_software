@@ -12,26 +12,28 @@ ApplicationWindow {
     id: root
     visible: true
     color: "#011026"
-    /*background: Rectangle
+    background: Rectangle
     {
        anchors.fill: parent
        color:"#011026"
-    }*/
+    }
 
 
     Connections{
-        target: link;
+        target: link
         function onErrordetected()
         {
             err_data = link.errorcatched()
-            err_device = err_data[0];
-            error_type = err_data[1];
-            //error_text = err_device+error_type;
+            //err_device = err_data[0];
+            //error_type = err_data[1];
+            error_text = err_data[0]+"-"+err_data[1];
 
             //console.log("Error Data:", err_data)
-                    console.log("Device:", err_device)
-                    console.log("Error Type:", error_type)
-                    console.log("Error Text:", error_text)
+                    //console.log("Device:", err_device)
+                    //console.log("Error Type:", error_type)
+                    //console.log("Error Text:", error_text)
+                       err_rect.visible = true
+                       start_Timer5.start()
         }
 
         function onJoystick_changed(value)
@@ -46,8 +48,9 @@ ApplicationWindow {
             //console.log("Hello",ad_status)
         }
 
-        function onsystemMode(value)
+        function onVehicle_mod_status(value)
         {
+                     //  console.log(value)
            mod_status=value
         }
 
@@ -81,7 +84,7 @@ ApplicationWindow {
     property int err_device:0;
     property int error_type:0;
     property string error_text:"";
-    property string err_text:"No Error";
+    property string err_text:"";
     property string err_warning_path:"qrc:/resources/images/warning.png";
     property int ad_status: 0
     property string ad_text:ad_status?"Armed": "Disarmed"
@@ -254,20 +257,20 @@ ApplicationWindow {
                 implicitHeight: 40
                 color: "#011026"
                 border.color: "#21be2b"
-                radius:2
+                radius:0.005*root.width
             }
         }
 
         Menu {
             title:"Settings"
 
-            Action {
+            /*Action {
                                            text: "Web Camera"
                                            onTriggered: {
                                                VideoStreamer.openVideoCamera("0")
                                                opencvImage.visible = true
                                            }
-                                       }
+                                       }*/
                             Action{
                                 text:"RTSP Camera"
                                 onTriggered:
@@ -304,7 +307,7 @@ ApplicationWindow {
             background: Rectangle {
                 implicitWidth: 200
                 implicitHeight: 40
-                // color: current_theme_color2/"#ffffff"
+                color: "#011026"
                 border.color: "#21be2b"
                 radius:  0.005*root.width  // 5
             }
@@ -357,16 +360,16 @@ ApplicationWindow {
                     text: "Software Support"
                     onTriggered: support_window.open()
                 }
-                Action {
+                /*Action {
                     text: "Report Issue"
 
 
                     /*onTriggered: Qt.openUrlExternally(
                                      "https://yourdomain.com/issues")*/
-                    onTriggered: {
+                    /*onTriggered: {
                         report_window.open()
                     }
-                }
+                }*/
 
 
                 /*Action {
@@ -597,8 +600,8 @@ ApplicationWindow {
 
         //VideoStreamer.openVideoCamera( "rtsp://admin:Vikra@123@192.168.56.50:554/video/live?channel=1&subtype=0");
         //opencvImage.visible = true
-        //VideoStreamer.openVideoCamera("rtsp://admin:vikra@123@192.168.56.50:554/cam/realmonitor?channel=1&subtype=0")
-        //opencvImage.visible = true
+        VideoStreamer.openVideoCamera("rtsp://admin:vikra@123@192.168.56.50:554/cam/realmonitor?channel=1&subtype=0")
+        opencvImage.visible = true
         /*fileModel.append({
                              "fileName": "C:/Users/Vijay/Documents/rough.txt"
                          })*/
@@ -2224,7 +2227,7 @@ ApplicationWindow {
                    Text {
                        Layout.fillWidth: true
                        id: about_body
-                       text: "\n\nVersion: 3.1.0\n\n\nThe ORCA is a centralized interface designed for monitoring,controlling and commanding interface for the Amphibious Crawling Robot developed by VIKRA.This application is designed to provide real-time vehicle status updates,enables real-time acquisition of sensor data from the vehicle, and allow seamless control of its movements and operations.It also supports the operation of the integrated Cone Penetration Tester (CPT) for geotechnical assessments and analysis.With a focus on performance, reliability, and usability, the control station offers a smooth,intuitive and  user-friendly  user interface(UI) to ensure intuitive interaction, reliable performance monitoring, tailored for efficient field operations in diverse terrains i.e., across both land and shallow water environments.\n\n\nThis Software is built on Qt which is a open-source software for developing embedded applications based on Qt 5.12.2 (MINGW,x64).Along with, 3rd party open-source library used for Video processing.No copyright violation taken place"
+                       text: "\n\nVersion: 1.0.0\n\n\nThe ORCA is a centralized interface designed for monitoring,controlling and commanding interface for the Remotely Operated Vehicle(ROV) developed by VIKRA.This application is designed to provide real-time vehicle status updates,enables real-time acquisition of sensor data from the vehicle, and allow seamless control of its movements and operations.With a focus on performance, reliability, and usability, the control station offers a smooth,intuitive and  user-friendly  user interface(UI) to ensure intuitive interaction, reliable performance monitoring.\n\n\nThis Software is built on Qt which is a open-source software for developing embedded applications based on Qt 6.10.1 (MSVC,x64).Along with, 3rd party open-source library used for Video processing and SDL library for controller operations.No copyright violation taken place"
                        //font.family: font_family
                        //font.bold: true
                        font.italic: false
@@ -2339,7 +2342,7 @@ ApplicationWindow {
 
                Rectangle {
                    anchors.fill: parent
-                   color: "#001f2f"
+                   color:"white"// "#001f2f"
                    radius: 0.005*root.width
                }
                ColumnLayout {
@@ -2351,34 +2354,44 @@ ApplicationWindow {
                    spacing: 0.0075 * root.width
                    Item {
                        width: 0.5 * parent.width
-                       height: parent.height
+                       //height: parent.height
                        Layout.fillWidth: true
                        Layout.fillHeight: true
 
                        TextArea {
                            id: min7
+                           //Layout.fillWidth: true
                            Layout.fillWidth: true
+                           Layout.fillHeight: true
                            width: parent.width
                            height: 0.5 * report_window.height
 
                            //Layout.fillWidth: true
-                           //Layout.alignment: Qt.AlignTop
+                           //Layout.alignment: Text.AlignVCenter
                            //Layout.topMargin:  0.04*parent.width
                            //Layout.leftMargin:  0.02*parent.width
                            //Layout.rightMargin:  0.02*parent.width
                            placeholderText: "Describe the issue"
+
+                           topPadding: 10
+                           leftPadding: 10
+                           rightPadding: 10
+                           bottomPadding: 10
+
+                           verticalAlignment: Text.AlignTop   // ⭐ IMPORTANT
                            wrapMode: TextArea.WrapAtWordBoundaryOrAnywhere // Enable text wrapping
-                           placeholderTextColor: "grey"
+                           //placeholderTextColor: "grey"
                            font.pixelSize: Math.min(root.width / 70, root.height / 60)
                            font.kerning: false
                            font.family: "Helvetica [Cronyx]"
                            font.capitalization: Font.Capitalize
                            //font.bold : true
                            selectByMouse: true
-                           background: Rectangle {
+                           /*background: Rectangle {
                                radius: 0.005*root.width
-                               border.color: min7.focus ? "#21be2b" : "transparent"
-                           }
+                               //border.color: min7.focus ? "#21be2b" : "transparent"
+
+                           }*/
 
                            onPressed: {
                                min7.focus = true
@@ -2605,25 +2618,19 @@ ApplicationWindow {
                   RowLayout {
                       width: parent.width
                       height: parent.height
-                      spacing: 0.005 * parent.width
+                      spacing: 0.0075 * root.width
 
-                      Item {
-                          width: parent.width
-                          height: parent.height
-                          Layout.fillWidth: true
-                          Layout.fillHeight: true
-                          Image {
-                              id: err_symbol
-                              source: err_warning_path
-                              //Layout.alignment: Qt.AlignVCenter
-                              sourceSize.width: parent.width
-                              sourceSize.height: parent.height
-                          }
+                      Image {
+                          id: err_symbol
+                          source: err_warning_path
+                          //Layout.alignment: Qt.AlignBottom
+                          sourceSize.width: parent.width
+                          sourceSize.height: parent.height
                       }
 
                       Text {
                           id: err_msg_text
-                          text: err_text
+                          text: error_text
                           font.bold: true
                           Layout.fillWidth: true
                           Layout.fillHeight: true
@@ -2788,5 +2795,91 @@ ApplicationWindow {
                font.italic: false
                font.underline: false
                font.strikeout: false
+           }
+
+           Popup {
+               id: info_window
+               width: 0.45 * root.width
+               height: 0.6 * root.height
+               anchors.centerIn: parent
+               //visible: on_console
+               closePolicy: Popup.CloseOnPressOutside
+               z: 1
+               modal: true
+               background: Rectangle {
+                   color: "black"//background_colortheme2
+                   radius: 0.005*root.width
+                   opacity: 1.0
+               }
+               focus: true
+
+               ScrollView {
+                   id: scroll4
+                   anchors {
+                       top: parent.top
+                       left: parent.left
+                       right: parent.right
+                       bottom: parent.bottom
+                       margins: 0.005 * root.width
+                   }
+                   width: about_window.width
+                   height: 0.95 * about_window.height
+                   clip: true
+
+                   ColumnLayout {
+                       width: scroll2.width
+                       spacing: 0.0075 * root.width
+                       Text {
+                           Layout.fillWidth: true
+                           id: info_body
+                           text: "Welcome to the ORCA control station, user interface for ORCA ROV.
+
+
+       Built on : Qt 6.10.1
+
+       Architecture: x86_64,x64;
+
+       Theme:
+       Platforms requested : windows
+       available :
+       Styles requested    : Windows11,Windows10
+       available    : windows11
+       System font         : Segoe UI 9
+       Native file dialog
+
+       Fonts:
+       General font : User Specified
+       Fixed font   : Arial
+       Title font   : User Specified
+
+
+       3rd party Libraries:
+
+       Opencv 4.12.0- opensource
+       SDL 3.2.28- opensource
+
+       UI configuration:
+
+       Color: #011026
+       Theme: Dark Theme
+       Theme color scheme: Not mentioned
+       System color scheme: Not mentioned
+       Language: English
+
+       Product: Orca Control Station
+       Based on: Qt 6.10.1 (MSVC 64-bit)
+       Built on: Feb 05 2026 18:00:00
+       From revision: Not yet Revised"
+                           //font.family: font_family
+                           font.bold: false
+                           font.italic: false
+                           //font.underline: underline_not
+                           font.strikeout: false
+                           font.pixelSize: Math.min(root.width / 70, root.height / 60)
+                           color: "#ffffff"
+                           wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                       }
+                   }
+               }
            }
 }

@@ -9,7 +9,15 @@
 #include "joystickcontroller.h"
 #include <QTimer>
 #include <QElapsedTimer>
+#include <qdir.h>
+#include <qmutex.h>
 #include "VEDTP.h"
+#include "qstandardpaths.h"
+#include <QQueue>      // Required for QQueue
+#include <QVariant>
+#include <QVector>
+#include <QtMath>// For qSin, qCos, qAsin, qSqrt, etc.
+#include <qprocess.h>
 class Link:public QObject
 {
     Q_OBJECT
@@ -96,6 +104,7 @@ signals:
     void gain_status(int);
     //void sendBytes(const QByteArray&);
 public slots:
+    void save_short();
     void set_mode(int);
     void gain_update(int);
     void joystick_controller_updated(QString,bool);
@@ -154,15 +163,15 @@ public slots:
     void setAutoMode();
     void setRTSMode();
     void sendModeCommand(unsigned char mode);
-    QByteArray errorcatched();
+    QVariantList errorcatched();
 private:
-    QByteArray errorArray;
+    QVariantList errorArray;
     Receiver receiver;
     QTimer *timer=nullptr;
     uint8_t loggedState=0;
     uint8_t vehicleID=VEHICLE_ROV6;
-    uint8_t armedState=0;
-    uint8_t systemMode=0;
+    uint8_t armedState=0,armedState_prev=0;
+    uint8_t systemMode=0,systemMode_prev=0;
     uint8_t gps_fix=0;
     uint8_t failsafe_flags=0;
     uint8_t system_health=0;
@@ -214,7 +223,7 @@ private:
     uint8_t power_flags=0;       // Bitfield: overvolt, undervolt, fail, etc.
     //void sendMode(System_Mode mode);
     uint uptime_ms=0;
-    HEARTBEAT_Packet heartbeat_data;
+    HEARTBEAT_Packet heartbeat_data,heartbeat_data2;
     AHRS_Packet ahrs_data;
     EXTERNAL_ATMOSPHERE_Packet External_atmosphere_data;
     POWER_HEALTH_Packet Power_health_data;
@@ -227,8 +236,6 @@ private:
     ARM_State arm_status;
     QTimer randomTimer;
     QElapsedTimer yawTimer;
-    QString log_path="";
-    QString pdf_path="";
     QString video_path="";
     QString error_path="";
     int y_axis_left = 1500, x_axis_left = 1500, x_axis_right = 1500, y_axis_right=1500;
@@ -244,5 +251,69 @@ private:
     QString password ="";
     int gain_plus=4,gain_minus=1;
     int delta_gain=0;
+    std::atomic<bool> writing_done{true};  // Atomic flag
+
+    QFile File,File2,File3,File4,File5,File6,File7,File8,File9,File10,File11;
+    QTextStream stream,stream2,stream3,stream4,stream5,stream6,stream7,stream8,stream9,stream10,stream11;
+    int array_size=0,array_size2=0,array_size3=0,array_size4=0,array_size5=0;
+    QMutex sendMutex,bufferMutex,parseMutex,mutex1,mutex11,mutex2,mutex20,mutex21,mutex22,mutex23,mutex24,mutex25,mutex26,mutex12,mutex3,mutex13,mutex4,mutex14,mutex15,mutex5,mutex6,mutex16,mutex7,mutex17,mutex8,mutex18,mutex9,mutex19,mutex10,health_mutex,streamMutex,file_mutex,streamMutex2,file_mutex2,streamMutex3,file_mutex3,streamMutex4,file_mutex4,streamMutex5,file_mutex5,mutex;
+    QDateTime date,date2;
+    QString formattedTime, formattedTime2,formattedTime3,formattedTime4;
+    QByteArray formattedTimeMsg,formattedTimeMsg2,formattedTimeMsg3;
+
+    QString from = "", to = "", selected_time = "";
+    QVector<QString> twoDArray, twoDArray2, twoDArray3, twoDArray_text,errDArray,bbDArray;
+
+    // Modify the target directory to add a subdirectory for your files.
+    QString logFileDir5="";
+    QDateTime currentDateTime,currentDateTime2;
+    QString logFilePath="",csvFilePath="";
+    bool start_once=true;
+    bool ahrs_once=true;
+    bool gps_once=true;
+    bool imu_once=true;
+    bool env_once=true;
+    bool sys_once=true;
+    bool leak_once=true;
+    bool flow_once=true;
+    bool enc_once=true;
+    bool cpt_once=true;
+    bool sonar_once=true;
+    bool err_once=true;
+    bool ack_once=true;
+    bool heart_once=true;
+    bool joy_once=false;
+
+    //converted Image Path
+    QString map_image_path = "";
+    QString log_path = "";
+    QString pdf_path="";
+    QString tilesDir="";
+    QString default_graph_path = "";
+    QString err_path = "";
+    QString err_path2 = "";
+    QString err_path3 = "";
+    QString err_path4 = "";
+    QString err_path5 = "";
+    QString bb_path = "";
+    QString bb_path2 = "";
+    //Python processing
+    QProcess process;
+    QString graph_path="",graph_path2="";
+    QString cpt_path="",cpt_path2="";
+
+
+    QString error_device="",err_type="";
+    //Logfiles
+    QString logFileDir4 = "";
+    QString element="",element2="",element3="",title_element="Date,Time,,Device Id,Log Status,Vehicle\n",graph_element="",graph_element2="";
+    int array_count=0,temp_i=0;
+    QByteArray temp_array;
+    qint64 startTime = 0, elapse_time = 0;
+    qint64 latency, prev_latency = 0;
+    QElapsedTimer timer2;
+
+    QVariantList array, array2, array_3, health_check_array,stream_Array,err_array;
+    QVariantList heart_array,ahrs_Array,gps_array,imu_array,env_array,sys_array,sonar_array,flow_array,leak_array,cpt_array,graph_array,encoder_array,dead_array,error_array,joy_array,cpt_1m;
 };
 #endif

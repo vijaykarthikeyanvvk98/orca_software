@@ -39,6 +39,8 @@ private:
     bool disarm_status_value=false;
     QString name="Unknown";
     int gain_add=4;
+    QString axisName="";
+
 };
 
 #endif // JOYSTICKCONTROLLER_H

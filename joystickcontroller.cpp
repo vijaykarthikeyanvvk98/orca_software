@@ -102,19 +102,19 @@ void JoystickController::pollEvents()
         }
         else if (event.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
         {
-            const int AXIS_DEADZONE = 10;
-            if (std::abs(event.jaxis.value) > AXIS_DEADZONE)
-            {
+            const int AXIS_DEADZONE = 0;
+            //if (std::abs(event.jaxis.value) > AXIS_DEADZONE)
+            //{
                 float norm =
                     (event.jaxis.value < 0)
                         ? event.jaxis.value / 32768.0f
                         : event.jaxis.value / 32767.0f;
-                uint16_t pwmValue;
+                //qDebug()<<norm<<std::abs(event.jaxis.value);
+                //uint16_t pwmValue;
                 /*if (event.jaxis.axis == 1) // vertical axis
                     pwmValue = mapAxisToPWM(-axisNormalized);
                 else
                     pwmValue = mapAxisToPWM(axisNormalized);*/
-                QString axisName;
                 switch (event.jaxis.axis)
                 {
                 case 0:
@@ -151,7 +151,7 @@ void JoystickController::pollEvents()
                          << "| Axis:" << event.jaxis.axis
                          << "| Raw:" << event.jaxis.value
                          << "| PWM:" << pwmValue;*/
-            }
+            //}
         }
         else if (event.type == SDL_EVENT_JOYSTICK_HAT_MOTION)
         {

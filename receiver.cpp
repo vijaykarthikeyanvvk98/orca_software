@@ -1,28 +1,55 @@
 #include "receiver.h"
 #include<qDebug>
 #include <QUdpSocket>
+#include <qdatetime.h>
+static QUdpSocket *send_socket;
+//QUdpSocket* nmea_socket = nullptr;  // actual definition
+
+static QHostAddress receiverAddress=QHostAddress("192.168.56.2");
+static quint16 receiverPort = 10050, CPT_PORT = 10055;
 Receiver::Receiver() {
     socket=new QUdpSocket(this);
     if (!socket->bind(QHostAddress::AnyIPv4, 10050)) {
         qDebug() << "Failed to bind UDP socket to" << Address << ":" << port;
     }
+    /*QTimer *timer = nullptr;
+    timer = new QTimer();
+    connect(timer,& QTimer::timeout, this, &Receiver::receivedatagram);
+    timer->start(1000);*/
     connect(socket,& QUdpSocket::readyRead, this, &Receiver::receivedatagram);
 
 
 }
 
-void Receiver::senddatagram(QByteArray data)
+void Receiver::senddatagram(QByteArray buffer)
 {
-   // qDebug()<<data.toHex();
+    //qDebug()<<buffer.toHex();
     //socket->writeDatagram(data,Address,port);
-    int message = socket->writeDatagram(data,QHostAddress("192.168.56.2"),10050);
+    // Implicit thread-safety via Qt's event loop
+    /*qDebug() << "UDP actually sent:"
+             << QDateTime::currentMSecsSinceEpoch();*/
+   QMetaObject::invokeMethod(this, [this, buffer]() {
+       if(!receiverAddress.isNull())
+       {
+           //qDebug()<<receiverAddress;
+           //qDebug()<<receiverPort;
+           //
+           int written=socket->writeDatagram(buffer,receiverAddress, receiverPort);
+           //qDebug()<<written;
+           //qDebug()<<socket->readBufferSize();
+
+       }
+       //else
+       ;
+   }, Qt::QueuedConnection);
     //qDebug()<<"message"<<message;
 }
 
 void Receiver::receivedatagram()
 {
-    if(!socket)
-        return;
+    //qDebug()<<"data";
+    /*if(!socket)
+        return;*/
     QByteArray Buffer;
     if(socket->state()==QUdpSocket::BoundState)
     {
@@ -34,7 +61,6 @@ void Receiver::receivedatagram()
             datagram.resize(socket->pendingDatagramSize());
             socket->readDatagram(datagram.data(), datagram.size(),& senderAddress, &senderPort);
             Buffer.append(datagram);
-            //qDebug()<<datagram;
             emit datareceived(Buffer);
             Buffer.clear();
         }

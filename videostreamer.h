@@ -31,9 +31,11 @@ public slots:
     void openVideoCamera(QString path);
     void closeCamera();
     void streamerThreadSlot();
-    void changeCamera();
+    void changeCamera(QString path);
     void start_recording();
     void stop_recording();
+    void subtitle_streaming();
+    void set_ahrs(QVariantList);
 private:
     cv::Mat frame;
     QTimer tUpdate;
@@ -45,6 +47,8 @@ private:
     int FPS_count = 0;
     double fps=30.00,fps2=30.00;
     cv::VideoWriter video;
+    //QString FPS, YAW, PITCH, ROLL, TEMP, PRESSURE, DEPTH, BATTERY;
+    cv::Point textPos;
 
 //signals:
 signals:
