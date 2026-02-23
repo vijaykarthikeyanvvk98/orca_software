@@ -27,7 +27,6 @@ ApplicationWindow {
             //err_device = err_data[0];
             //error_type = err_data[1];
             error_text = err_data[0]+"-"+err_data[1];
-
             //console.log("Error Data:", err_data)
                     //console.log("Device:", err_device)
                     //console.log("Error Type:", error_type)
@@ -57,6 +56,22 @@ ApplicationWindow {
         function onGain_status(value)
         {
                gain_text = value.toString() + "%"
+        }
+
+        function onDisable_depth_mode()
+        {
+            showDepthButton = false;
+        }
+
+        function onStop_timer_blinking()
+        {
+            start_Timer5.stop()
+            err_rect.visible = false
+        }
+
+        function onEnable_depth_mode()
+        {
+            showDepthButton = true;
         }
     }
 
@@ -90,7 +105,7 @@ ApplicationWindow {
     property string ad_text:ad_status?"Armed": "Disarmed"
     property int mod_status: 0
     property string mod_text: getModeText()
-
+    property bool showDepthButton: true
     property string gain_text: "25%"
     property real y6:link ? link.pitch_deg: 0.0
     property bool edit_not: false
@@ -191,7 +206,7 @@ ApplicationWindow {
     menuBar: MenuBar {
         id: menuBar
 
-        Menu {
+        /*Menu {
             title: "Device"
 
 
@@ -206,7 +221,7 @@ ApplicationWindow {
                     connect_stats(ip_address)
                 }
             }*/
-            Action {
+            /*Action {
                 id: menu_2
                 text: "ORCA"
                 onTriggered: {
@@ -258,11 +273,11 @@ ApplicationWindow {
                 color: "#011026"
                 border.color: "#21be2b"
                 radius:0.005*root.width
-            }
-        }
+            }*/
+        //}
 
         Menu {
-            title:"Settings"
+            title:"Video"
 
             /*Action {
                                            text: "Web Camera"
@@ -1215,6 +1230,7 @@ ApplicationWindow {
                 text: "HOLD"
                 index: 0
                 baseColor: "#2ECC71"
+
             }
 
             ROVButton {
@@ -1227,6 +1243,7 @@ ApplicationWindow {
                 text: "DEPTH"
                 index: 2
                 baseColor: "#F39C12"
+                visible: showDepthButton
             }
 
             ROVButton {
@@ -2690,8 +2707,8 @@ ApplicationWindow {
                   Timer {
                       id: start_Timer5
                       interval: 750 // Timer interval in milliseconds
-                      //running: true // Start the timer when the application starts
-                      //repeat: true
+                      running: false // Start the timer when the application starts
+                      repeat: false
 
                       property int elapsedTime: 1 // Elapsed time in seconds
 

@@ -71,6 +71,7 @@ public:
     quint64 uptimeMsAck() const;
 signals:
     void errordetected();
+    void set_heartbeat_data();
     void _invokeWriteBytes(QByteArray data);
     void data_processed(int device);
     void yawValueChanged(float value);
@@ -102,9 +103,13 @@ signals:
     void vehicle_ad_status(int);
     void vehicle_mod_status(int);
     void gain_status(int);
+    void disable_depth_mode();
+    void enable_depth_mode();
+    void stop_timer_blinking();
     //void sendBytes(const QByteArray&);
 public slots:
     void save_short();
+    void update_heartbeat();
     void set_mode(int);
     void gain_update(int);
     void joystick_controller_updated(QString,bool);
@@ -249,7 +254,7 @@ private:
     int outputMin=1100, outputMax=1900, InputMin=-1, InputMax=1;
     QString username ="";
     QString password ="";
-    int gain_plus=4,gain_minus=1;
+    float gain_plus=4.0,gain_minus=1;
     int delta_gain=0;
     std::atomic<bool> writing_done{true};  // Atomic flag
 
@@ -312,7 +317,7 @@ private:
     qint64 startTime = 0, elapse_time = 0;
     qint64 latency, prev_latency = 0;
     QElapsedTimer timer2;
-
+    QTimer *timer3=nullptr;
     QVariantList array, array2, array_3, health_check_array,stream_Array,err_array;
     QVariantList heart_array,ahrs_Array,gps_array,imu_array,env_array,sys_array,sonar_array,flow_array,leak_array,cpt_array,graph_array,encoder_array,dead_array,error_array,joy_array,cpt_1m;
 };

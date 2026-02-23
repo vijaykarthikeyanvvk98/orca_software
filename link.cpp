@@ -12,12 +12,19 @@
 #include <QtConcurrent/QtConcurrent>  // For QtConcurrent::run()
 #include "videostreamer.h"
 VideoStreamer videostream;
-
+static bool depth_error_once=true;
 Link::Link()
 {
     joystickcontroller.initialize();
+    timer3 = new QTimer(this);
+    timer3->setSingleShot(true);
+    connect(timer3, &QTimer::timeout, this, [this]()
+            {
+                //qDebug() << "Timer triggered only once";
+        emit stop_timer_blinking();
+            });
     connect(this, &Link::_invokeWriteBytes, this, &Link::send_data);
-    connect(&receiver,&Receiver::datareceived,this, &Link::send_data_to_process,Qt::QueuedConnection);
+    connect(&receiver,&Receiver::datareceived,this, &Link::send_data_to_process,Qt::AutoConnection);
     connect(this, &Link::data_processed, this,&Link::data_to_be_updated);
     /*connect(&randomTimer, &QTimer::timeout,
             this, &Link::generateRandomData);*/
@@ -37,7 +44,16 @@ Link::Link()
     connect(&joystickcontroller, &JoystickController::joystick_detected,this,&Link::joystick_controller_updated);
     connect(&joystickcontroller, &JoystickController::set_gain,this,&Link::gain_update);
     create_directory();
-
+    heartbeat_data2={};
+    heartbeat_data2.loggedState        = loggedState;       // System logged state      ( enum : Logged_State)
+    heartbeat_data2.vehicleID          = vehicleID;      // Vehicle type             ( enum : Vehicle_ID)
+    heartbeat_data2.armedState         = armedState;         // System armed state       ( enum : ARM_State)
+    heartbeat_data2.systemMode         = systemMode;        // System mode state        (enum : System_Mode)
+    heartbeat_data2.gps_fix            = gps_fix;       // System gps fix           (enum : GPSFixStatus)
+    heartbeat_data2.failsafe_flags     = failsafe_flags;    // System failsafe flags    (enum : Failsafe_flags)
+    heartbeat_data2.system_health      = system_health; // System health flag       (enum : SystemHealth)
+    heartbeat_data2.sensors_validity   = sensors_validity;
+    heartbeat_data2.uptime_ms =static_cast<uint32_t>(QDateTime::currentDateTime().toMSecsSinceEpoch());
     //emit vehicle_ad_status(1);
 }
 Link::~Link()
@@ -80,29 +96,19 @@ Link::~Link()
 }
 void Link::send_heart_beat()
 {
-    heartbeat_data2.loggedState        = loggedState;       // System logged state      ( enum : Logged_State)
-    heartbeat_data2.vehicleID          = vehicleID;      // Vehicle type             ( enum : Vehicle_ID)
-    heartbeat_data2.armedState         = armedState;         // System armed state       ( enum : ARM_State)
-    heartbeat_data2.systemMode         = systemMode;        // System mode state        (enum : System_Mode)
-    heartbeat_data2.gps_fix            = gps_fix;       // System gps fix           (enum : GPSFixStatus)
-    heartbeat_data2.failsafe_flags     = failsafe_flags;    // System failsafe flags    (enum : Failsafe_flags)
-    heartbeat_data2.system_health      = system_health; // System health flag       (enum : SystemHealth)
-    heartbeat_data2.sensors_validity   = sensors_validity;
-    heartbeat_data2.uptime_ms =static_cast<uint32_t>(QDateTime::currentDateTime().toMSecsSinceEpoch());
     VEDTP_Main heartbeat_send_packet;                                                   // for holding the main vedtp packet
 
     uint8_t encode_status = encode_HEARTBEAT(&heartbeat_send_packet,&heartbeat_data2);   // encode heartbeat function from vedtp protocol library
     //qDebug()<<heartbeat_send_packet.device;
     if(encode_status)
     {
-    //mavlink_send_buffer(heartbeat_send_packet);
+        //mavlink_send_buffer(heartbeat_send_packet);
         emit _invokeWriteBytes(
             QByteArray(reinterpret_cast<char*>(&heartbeat_send_packet),
                        sizeof(VEDTP_Main))
             );
     }
-
-    heartbeat_data2={};
+    emit set_heartbeat_data();
 }
 void Link::mavlink_send_buffer(VEDTP_Main vedtp_send)
 {
@@ -126,7 +132,7 @@ void Link::send_data(QByteArray buffer)
     }
     bool invoked = QMetaObject::invokeMethod(&receiver, [this, buffer]() {
         receiver.senddatagram(buffer);
-    },Qt::QueuedConnection);
+    },Qt::DirectConnection);
 
     if (!invoked) {
         qCritical() << "Failed to queue datagram";
@@ -555,6 +561,10 @@ void Link::env_parsing()
 
     }
 
+    if(depth_error_once)
+    {
+        emit enable_depth_mode();
+    }
     if(File.isOpen())
     {
         formattedTimeMsg.clear();
@@ -567,6 +577,7 @@ void Link::env_parsing()
         save_short();
     }
     else;
+
 
 }
 void Link::error_parsing()
@@ -664,8 +675,10 @@ void Link::error_parsing()
        // emit
         break;
     }
-    device_id=error_data.device_id;
-    error_type=error_data.error_type;
+    if(error_data.device_id == 6 && error_data.error_type ==1)
+        emit disable_depth_mode();
+    //device_id=error_data.device_id;
+    //error_type=error_data.error_type;
     errorArray.clear();
     //errorArray.append(device_id);
     //qDebug()<<"error device id "<<device_id;
@@ -828,6 +841,21 @@ void Link::save_short()
     });
 }
 
+void Link::update_heartbeat()
+{
+    heartbeat_data2={};
+    heartbeat_data2.loggedState        = loggedState;       // System logged state      ( enum : Logged_State)
+    heartbeat_data2.vehicleID          = vehicleID;      // Vehicle type             ( enum : Vehicle_ID)
+    heartbeat_data2.armedState         = armedState;         // System armed state       ( enum : ARM_State)
+    heartbeat_data2.systemMode         = systemMode;        // System mode state        (enum : System_Mode)
+    heartbeat_data2.gps_fix            = gps_fix;       // System gps fix           (enum : GPSFixStatus)
+    heartbeat_data2.failsafe_flags     = failsafe_flags;    // System failsafe flags    (enum : Failsafe_flags)
+    heartbeat_data2.system_health      = system_health; // System health flag       (enum : SystemHealth)
+    heartbeat_data2.sensors_validity   = sensors_validity;
+    heartbeat_data2.uptime_ms =static_cast<uint32_t>(QDateTime::currentDateTime().toMSecsSinceEpoch());
+
+}
+
 void Link::set_mode(int mode)
 {
     switch(mode)
@@ -852,23 +880,28 @@ void Link::set_mode(int mode)
 
 void Link::gain_update(int value)
 {
-    gain_plus = value;
+    //gain_plus = value;
     //qDebug()<<gain_plus;
-    switch (gain_plus) {
+    switch (value) {
     case 4:
         emit gain_status(25);
+        gain_plus = 0.25;
         break;
     case 3:
         emit gain_status(50);
+        gain_plus = 0.50;
         break;
     case 2:
         emit gain_status(75);
+        gain_plus = 0.75;
         break;
     case 1:
         emit gain_status(100);
+        gain_plus = 1.0;
         break;
     default:
         emit gain_status(25);
+        gain_plus = 0.25;
         break;
     }
 }
@@ -930,7 +963,7 @@ int Link::mapvalue(double value, int InputMin, int InputMax, int outputMin,int o
 {
     //qDebug()<<"Mapped Value";
     //delta_gain = (1900-1500)/gain_plus;
-    delta_gain = 400/gain_plus;
+    delta_gain = 400*(gain_plus);
     outputMax = 1500+ delta_gain;
     outputMin = 1500- delta_gain;
     //qDebug()<<gain_plus<<delta_gain<<outputMax<<outputMin;
@@ -1162,8 +1195,8 @@ void Link::sendJoystickData()
     joy.channels[5] = light_intensity;
     joy.channels[6] = light_intensity;
     joy.channels[7] = light_intensity;
-    /*qDebug()<<"channels 0: "<<joy.channels[0];
-    qDebug()<<"channel 1: "<<joy.channels[1];
+    /*qDebug()<<"channels 0: "<<y_axis_left;
+    qDebug()<<"channel 1: "<<x_axis_left;
     qDebug()<<"chanel 2: "<<joy.channels[2];
     qDebug()<<"channel 3: "<<joy.channels[3];
     qDebug()<<"channel 4: "<<joy.channels[4];*/
@@ -1285,6 +1318,11 @@ void Link::sendModeCommand(unsigned char mode)
 
 QVariantList Link::errorcatched()
 {
+    if(timer3 && timer3->isActive())
+    {
+        timer3->stop();
+        timer3->start(10000);
+    }
     return errorArray;
 }
 void Link::login(QString username, QString password)

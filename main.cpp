@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
    // joystickcontroller.initialize();
     OpencvImageProvider *liveImageProvider(new OpencvImageProvider);
     Link link;
-    link.create_directory();
+    //link.create_directory();
     //link.error_parsing();
     Receiver receiver;
     engine.rootContext()->setContextProperty("VideoStreamer",&videoStreamer);
@@ -51,5 +51,7 @@ int main(int argc, char *argv[])
         window->showMaximized();
         window->setMinimumSize(QSize(670, 470));
     }
+    QTimer::singleShot(1000,splash,SLOT(close()));
+
     return app.exec();
 }

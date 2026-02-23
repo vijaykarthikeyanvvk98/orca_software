@@ -41,7 +41,7 @@ void Receiver::senddatagram(QByteArray buffer)
        }
        //else
        ;
-   }, Qt::QueuedConnection);
+   }, Qt::DirectConnection);
     //qDebug()<<"message"<<message;
 }
 
