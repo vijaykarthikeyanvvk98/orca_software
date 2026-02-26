@@ -44,6 +44,14 @@ class Link:public QObject
     Q_PROPERTY(QString message READ messageValue WRITE setMessage NOTIFY messageChanged)
     Q_PROPERTY(quint64 uptime_ms_ack READ uptimeMsAck WRITE setUptimeMsAck NOTIFY uptimeMsAckChanged)
 
+    Q_PROPERTY(float temperature_imuC READ imu_temperature WRITE set_imu_temp NOTIFY imu_temp_changed)
+    Q_PROPERTY(uint8_t systemcalibration READ imu_system WRITE set_imu_uptime NOTIFY imu_uptime_changed)
+    Q_PROPERTY(uint8_t gyrocalibration READ imu_accelerometer WRITE set_imu_magnetometer NOTIFY imu_magnetometer_changed)
+    Q_PROPERTY(uint8_t accelerometercalibration READ imu_gyro WRITE set_imu_accelerometer NOTIFY imu_gyro_changed)
+    Q_PROPERTY(uint8_t magnetometercalibration READ imu_magnetometer WRITE set_imu_gyro NOTIFY imu_accelerometer_changed)
+    Q_PROPERTY(uint32_t uptime_ms_imu READ yaw_value WRITE set_imu_system NOTIFY imu_system_changed)
+
+
 public:
     Link();
     ~Link();
@@ -69,6 +77,20 @@ public:
     uint8_t flagsAck() const;
     QString messageValue() const;
     quint64 uptimeMsAck() const;
+
+    float imu_temperature() const;
+    uint8_t imu_system() const;
+    uint8_t imu_accelerometer() const;
+    uint8_t imu_gyro() const;
+    uint8_t imu_magnetometer() const;
+    uint32_t imu_uptime() const;
+    /*float temperature() const;
+    float temperature() const;
+    float temperature() const;
+    float temperature() const;
+    float temperature() const;
+    float temperature() const;*/
+
 signals:
     void errordetected();
     void set_heartbeat_data();
@@ -106,6 +128,14 @@ signals:
     void disable_depth_mode();
     void enable_depth_mode();
     void stop_timer_blinking();
+
+    void imu_temp_changed();
+    void imu_uptime_changed();
+    void imu_magnetometer_changed();
+    void imu_gyro_changed();
+    void imu_accelerometer_changed();
+    void imu_system_changed();
+    void imu_updated();
     //void sendBytes(const QByteArray&);
 public slots:
     void save_short();
@@ -132,6 +162,7 @@ public slots:
     void power_health_parsing();
     void motor_parsing();
     void sonar_parsing();
+    void imu_parsing();
     void command_parsing();
     void setYaw_value(float value);
     void setPitch_value(float value);
@@ -169,6 +200,14 @@ public slots:
     void setRTSMode();
     void sendModeCommand(unsigned char mode);
     QVariantList errorcatched();
+    QVariantList imu_data();
+    void set_imu_temp(float);
+    void set_imu_uptime(uint32_t);
+    void set_imu_magnetometer(uint8_t);
+    void set_imu_accelerometer(uint8_t);
+    void set_imu_gyro(uint8_t);
+    void set_imu_system(uint8_t);
+    void check_env();
 private:
     QVariantList errorArray;
     Receiver receiver;
@@ -254,7 +293,7 @@ private:
     int outputMin=1100, outputMax=1900, InputMin=-1, InputMax=1;
     QString username ="";
     QString password ="";
-    float gain_plus=4.0,gain_minus=1;
+    float gain_plus=0.25,gain_minus=1;
     int delta_gain=0;
     std::atomic<bool> writing_done{true};  // Atomic flag
 
@@ -302,6 +341,7 @@ private:
     QString err_path5 = "";
     QString bb_path = "";
     QString bb_path2 = "";
+
     //Python processing
     QProcess process;
     QString graph_path="",graph_path2="";
@@ -320,5 +360,26 @@ private:
     QTimer *timer3=nullptr;
     QVariantList array, array2, array_3, health_check_array,stream_Array,err_array;
     QVariantList heart_array,ahrs_Array,gps_array,imu_array,env_array,sys_array,sonar_array,flow_array,leak_array,cpt_array,graph_array,encoder_array,dead_array,error_array,joy_array,cpt_1m;
+
+
+    //IMU
+    float acceleration[3];
+    float gyro[3];
+    float magnetic[3];
+    float rotationvector[3];
+    float linearacceleration[3];
+    float gravity[3];
+    float temperature_imuC=0.0;
+    uint8_t systemcalibration=0;
+    uint8_t gyrocalibration=0;
+    uint8_t accelerometercalibration=0;
+    uint8_t magnetometercalibration=0;
+    uint32_t uptime_ms_imu=0;
+
+    QTimer *watchdog = nullptr;
+    float temperature_C_prev=0.0;         // Air/Water temp
+    float depth_m_prev=0.0;         // Air/Water temp
+    float pressure_mbar_prev=0.0;         // Air/Water temp
+
 };
 #endif

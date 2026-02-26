@@ -73,6 +73,36 @@ ApplicationWindow {
         {
             showDepthButton = true;
         }
+
+        function onImu_updated()
+        {
+            var data = link.imu_data()
+            imu_temp = data[0].toFixed(1)
+            imu_mag = data[1].toFixed(1)
+            imu_acc = data[2].toFixed(1)
+            imu_sys = data[3].toFixed(1)
+            imu_gyro = data[4].toFixed(1)
+            //imu_acc_x = data[5].toFixed(1)
+            imu_acc_x = data[6].toFixed(1)
+            imu_acc_y = data[7].toFixed(1)
+            imu_acc_z = data[8].toFixed(1)
+            imu_gyro_x = data[9].toFixed(1)
+            imu_gyro_y = data[10].toFixed(1)
+            imu_gyro_z = data[11].toFixed(1)
+            imu_magnetic_x = data[12].toFixed(1)
+            imu_magnetic_y = data[13].toFixed(1)
+            imu_magnetic_z = data[14].toFixed(1)
+            imu_rotationvector_x = data[15].toFixed(1)
+            imu_rotationvector_y = data[16].toFixed(1)
+            imu_rotationvector_z = data[17].toFixed(1)
+            imu_linearacceleration_x = data[18].toFixed(1)
+            imu_linearacceleration_y = data[19].toFixed(1)
+            imu_linearacceleration_z = data[20].toFixed(1)
+            imu_gravity_x = data[21].toFixed(1)
+            imu_gravity_y = data[22].toFixed(1)
+            imu_gravity_z = data[23].toFixed(1)
+
+        }
     }
 
     function getModeText() {
@@ -153,6 +183,9 @@ ApplicationWindow {
     ]
     property var data_model2: ["0.0\u00B0", "0.0\u00B0C", "0 (mbar)", "0(m)" /*,"0.0 V(0%)"*/
     ]
+    property var data_model3:["Temperature(\u00B0C)","Magnetometer","Acceleration","Gyro","System","Acceleration(x)","Acceleration(y)","Acceleration(z)","Gyro(x)","Gyro(y)","Gyro(z)","Magnetic(x)","Magnetic(y)","Magnetic(z)","Rotation(x)","Rotation(y)","Rotation(z)","Linear(x)","Linear(y)","Linear(z)","Gravity(x)","Gravity(y)","Gravity(z)"]
+    property var data_model4:[imu_temp.toFixed(1),imu_mag.toFixed(1),imu_acc.toFixed(1),imu_gyro.toFixed(1),imu_sys.toFixed(1),imu_acc_x,imu_acc_y,imu_acc_z,imu_gyro_x,imu_gyro_y,imu_gyro_z,imu_magnetic_x,imu_magnetic_y,imu_magnetic_z,imu_rotationvector_x,imu_rotationvector_y,imu_rotationvector_z,imu_linearacceleration_x,imu_linearacceleration_y,imu_linearacceleration_z,imu_gravity_x,imu_gravity_y,imu_gravity_z]
+
     property real yaw_value: 0
     property real pitch_value :0
     property real roll_value: 0
@@ -166,6 +199,7 @@ ApplicationWindow {
     property bool start_status: false
     property bool browser_status: false
     property bool stop_status: false
+
     property bool pause_status: false
     property bool pause_status2: false
     property int a_mode: 0
@@ -203,6 +237,33 @@ ApplicationWindow {
     property bool key_0: false
     property int li_key: 50
     property int sp_key: 50
+
+    property real imu_temp:link?link.temperature_imuC: 0.0
+    property real imu_mag: link?link.magnetometercalibration: 0.0
+    property real imu_acc: link?link.accelerometercalibration: 0.0
+    property real imu_sys: link?link.systemcalibration: 0.0
+    property real imu_gyro:link?link.gyrocalibration: 0.0
+    property real imu_acc_x:0.0
+    property real imu_acc_y:0.0
+    property real imu_acc_z:0.0
+    property real imu_gyro_x:0.0
+    property real imu_gyro_y:0.0
+    property real imu_gyro_z:0.0
+    property real imu_magnetic_x: 0.0
+    property real imu_magnetic_y:0.0
+    property real imu_magnetic_z: 0.0
+    property real imu_rotationvector_x:0.0
+    property real imu_rotationvector_y:0.0
+    property real imu_rotationvector_z:0.0
+    property real imu_linearacceleration_x: 0.0
+    property real imu_linearacceleration_y:0.0
+    property real imu_linearacceleration_z:0.0
+    property real imu_gravity_x:0.0
+    property real imu_gravity_y:0.0
+    property real imu_gravity_z: 0.0
+
+    //property real imu_temp: 0.0
+
     menuBar: MenuBar {
         id: menuBar
 
@@ -346,6 +407,15 @@ ApplicationWindow {
                     //stack.push(terminal_page)
                 }
             }*/
+
+            Action {
+                text: "Imu Panel"
+
+                onTriggered: {
+                    imu_panel.open()
+                }
+            }
+
             Action {
                 text: "About"
 
@@ -353,6 +423,8 @@ ApplicationWindow {
                     about_window.open()
                 }
             }
+
+
             /*Action {
                 text: "User Manual"
                 onTriggered: {
@@ -615,8 +687,8 @@ ApplicationWindow {
 
         //VideoStreamer.openVideoCamera( "rtsp://admin:Vikra@123@192.168.56.50:554/video/live?channel=1&subtype=0");
         //opencvImage.visible = true
-        VideoStreamer.openVideoCamera("rtsp://admin:vikra@123@192.168.56.50:554/cam/realmonitor?channel=1&subtype=0")
-        opencvImage.visible = true
+        //VideoStreamer.openVideoCamera("rtsp://admin:vikra@123@192.168.56.50:554/cam/realmonitor?channel=1&subtype=0")
+        //opencvImage.visible = true
         /*fileModel.append({
                              "fileName": "C:/Users/Vijay/Documents/rough.txt"
                          })*/
@@ -2230,7 +2302,7 @@ ApplicationWindow {
                    Text {
                        Layout.fillWidth: true
                        id: about_title
-                       text: "\Orca "
+                       text: "Orca "
                        font.bold: true
                        font.italic: false
 
@@ -2244,7 +2316,7 @@ ApplicationWindow {
                    Text {
                        Layout.fillWidth: true
                        id: about_body
-                       text: "\n\nVersion: 1.0.0\n\n\nThe ORCA is a centralized interface designed for monitoring,controlling and commanding interface for the Remotely Operated Vehicle(ROV) developed by VIKRA.This application is designed to provide real-time vehicle status updates,enables real-time acquisition of sensor data from the vehicle, and allow seamless control of its movements and operations.With a focus on performance, reliability, and usability, the control station offers a smooth,intuitive and  user-friendly  user interface(UI) to ensure intuitive interaction, reliable performance monitoring.\n\n\nThis Software is built on Qt which is a open-source software for developing embedded applications based on Qt 6.10.1 (MSVC,x64).Along with, 3rd party open-source library used for Video processing and SDL library for controller operations.No copyright violation taken place"
+                       text: "\n\nVersion: 1.10.1\n\n\nThe ORCA is a centralized interface designed for monitoring,controlling and commanding interface for the Remotely Operated Vehicle(ROV) developed by VIKRA.This application is designed to provide real-time vehicle status updates,enables real-time acquisition of sensor data from the vehicle, and allow seamless control of its movements and operations.With a focus on performance, reliability, and usability, the control station offers a smooth,intuitive and  user-friendly  user interface(UI) to ensure intuitive interaction, reliable performance monitoring.\n\n\nThis Software is built on Qt which is a open-source software for developing embedded applications based on Qt 6.10.1 (MSVC,x64).Along with, 3rd party open-source library used for Video processing and SDL library for controller operations.No copyright violation taken place"
                        //font.family: font_family
                        //font.bold: true
                        font.italic: false
@@ -2899,4 +2971,168 @@ ApplicationWindow {
                    }
                }
            }
+
+           Rectangle{
+               id: imageRect2
+               anchors.bottom: imageRect.bottom
+               anchors.bottomMargin: 0.005*parent.width
+               anchors.right: imageRect.right
+               anchors.rightMargin: 0.005*parent.width
+               width: 0.15*parent.width
+               height: 0.175*parent.height
+               //anchors.margins: 0.005*parent.width
+               color: "black"
+               border.color: "white"
+               border.width: 3
+               visible: false//true
+               opacity:1.0
+               scale:1
+
+               Image{
+                   id: opencvImage2
+                   width: 0.975*parent.width
+                   height:0.9*parent.height
+                   anchors.centerIn: parent
+                   fillMode: Image.PreserveAspectFit
+                   property bool counter: false
+                   visible: true
+                   source: "qrc:/resources/images/dummy_template3.jpg"
+                   asynchronous: false
+                   cache: false
+
+
+                   function reload()
+                   {
+                       counter = !counter
+                       source = "image://live/image?id=" + counter
+                   }
+
+               }
+
+           }
+
+           Popup {
+                  id: imu_panel
+                  width: 0.45 * root.width
+                  height: 0.6 * root.height
+                  anchors.centerIn: parent
+                  //visible: on_console
+                  closePolicy: Popup.CloseOnPressOutside
+                  z: 1
+                  modal: true
+                  background: Rectangle {
+                     color: "black"
+                      radius: 0.005*root.width
+                      opacity: 0.7
+                  }
+                  focus: true
+
+                  ScrollView {
+                      id: scroll5
+                      anchors {
+                          top: parent.top
+                          left: parent.left
+                          right: parent.right
+                          bottom: parent.bottom
+                          margins: 0.005 * root.width
+                      }
+                      width: imu_panel.width
+                      height: 0.75 * imu_panel.height
+                      clip: true
+
+                      ColumnLayout {
+                          width: scroll5.width
+                          height: parent.height
+                          spacing: 0.0075 * root.width
+
+                          Text {
+                              Layout.fillWidth: true
+                              id: imu_title
+                              text: "IMU Panel "
+                              font.bold: true
+                              font.italic: false
+
+                              font.underline: false
+                              font.strikeout: false
+                              font.pixelSize: Math.min(root.width / 40, root.height / 30)
+                              color:"#ffffff"
+                              horizontalAlignment: Text.AlignHCenter
+                          }
+
+                          Item
+                          {
+                              Layout.fillWidth: true
+                          }
+
+                              RowLayout
+                              {
+                                  width:parent.width
+                                  spacing:0.05*root.width
+                                  Layout.fillHeight: true
+
+                                  ColumnLayout
+                                  {
+                                      Layout.fillWidth: true
+                                      height:parent.height
+                                      spacing:0.005*root.width
+
+                                      Repeater
+                                        {
+                                            model:data_model3
+
+                                            Text {
+                                                               text: modelData
+                                                               Layout.fillWidth: true
+                                                               //font.family: font_family
+                                                               font.bold: true
+                                                               font.italic: false
+                                                               font.underline: false
+                                                               font.strikeout: false
+                                                               font.pixelSize: Math.min(root.width/70,root.height/60) // "Palatino Linotype"
+                                                               //font: menuItem3.font
+                                                               //opacity: enabled ? 1.0 : 0.3
+                                                               color:"#ffffff"
+                                                               horizontalAlignment: Text.AlignLeft
+                                                               verticalAlignment: Text.AlignVCenter
+                                                           }
+
+
+                                        }
+                                  }
+
+                                  ColumnLayout
+                                  {
+                                      Layout.fillWidth: true
+                                      spacing:0.005*root.width
+
+                                      Repeater
+                                        {
+                                            model:data_model4
+
+                                            Text {
+                                                               text: modelData
+                                                               Layout.fillWidth: true
+                                                               //font.family: font_family
+                                                               font.bold: true
+                                                               font.italic: false
+                                                               font.underline: false
+                                                               font.strikeout: false
+                                                               font.pixelSize: Math.min(root.width/70,root.height/60) // "Palatino Linotype"
+                                                               //font: menuItem3.font
+                                                               //opacity: enabled ? 1.0 : 0.3
+                                                               color:"#ffffff"
+                                                               horizontalAlignment: Text.AlignLeft
+                                                               verticalAlignment: Text.AlignVCenter
+                                                           }
+
+
+                                        }
+                                  }
+                              }
+
+                      }
+                  }
+           }
+
+
 }

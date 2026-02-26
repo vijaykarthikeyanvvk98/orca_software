@@ -10,7 +10,7 @@ set(OpenCV_DIR
 )
 
 find_package(OpenCV REQUIRED CONFIG)
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Quick Gui Multimedia Core5Compat)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Quick Gui Core5Compat)
 #set(SDL3_INCLUDE_DIR "C:/Users/vijay/Downloads/SDL3-devel-3.2.28-VC/SDL3-3.2.28/include")
 #set(SDL3_LIB_DIR     "C:/Users/vijay/Downloads/SDL3-devel-3.2.28-VC/SDL3-3.2.28/lib/x64")
 #set(SDL3_LIB_NAME    SDL3)  # name of the library without lib prefix or extension

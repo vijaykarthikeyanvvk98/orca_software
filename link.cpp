@@ -11,12 +11,14 @@
 #include <iostream>
 #include <QtConcurrent/QtConcurrent>  // For QtConcurrent::run()
 #include "videostreamer.h"
+#include <QtMath>
 VideoStreamer videostream;
 static bool depth_error_once=true;
 Link::Link()
 {
     joystickcontroller.initialize();
     timer3 = new QTimer(this);
+    watchdog=new QTimer(this);
     timer3->setSingleShot(true);
     connect(timer3, &QTimer::timeout, this, [this]()
             {
@@ -43,6 +45,7 @@ Link::Link()
     connect(&joystickcontroller, &JoystickController::mode,this,&Link::set_mode);
     connect(&joystickcontroller, &JoystickController::joystick_detected,this,&Link::joystick_controller_updated);
     connect(&joystickcontroller, &JoystickController::set_gain,this,&Link::gain_update);
+    connect(watchdog, &QTimer::timeout,this,&Link::check_env);
     create_directory();
     heartbeat_data2={};
     heartbeat_data2.loggedState        = loggedState;       // System logged state      ( enum : Logged_State)
@@ -55,6 +58,7 @@ Link::Link()
     heartbeat_data2.sensors_validity   = sensors_validity;
     heartbeat_data2.uptime_ms =static_cast<uint32_t>(QDateTime::currentDateTime().toMSecsSinceEpoch());
     //emit vehicle_ad_status(1);
+    watchdog->start(Freq(FREQ_EXTERNAL_ATMOSPHERE));
 }
 Link::~Link()
 {
@@ -65,7 +69,7 @@ Link::~Link()
 
     heartbeatTimer=nullptr;
     joystickTimer=nullptr;
-
+    watchdog=nullptr;
     temp_array.clear();
     formattedTimeMsg.clear();
     formattedTimeMsg2.clear();
@@ -312,10 +316,10 @@ void Link::send_data_to_process(QByteArray data)
             }
                 break;
                 case VEDTP_INVALID_START_BYTES:                                             // invalid start byte, means packet is not started yet, just do nothing
-
+                    qDebug()<<"Invalid First Byte";
                 break;
                 case VEDTP_INVALID_SECOND_BYTES:                                            // invalid second byte, means either the first byte triggered with random data or packet got corrupted. do nothing or show error
-                    qDebug()<<"Invalid Senond Byte";
+                    qDebug()<<"Invalid Second Byte";
                 break;
                 case VEDTP_CRC_FAIL:                                                        // crc checking fail, packet is corrupted. do nothing or show error
                     qDebug()<<"CRC Fail";
@@ -336,6 +340,9 @@ void Link::data_to_be_updated(int device)
         break;
     case DEVICE_AHRS:
         AHRS_parsing();
+        break;
+    case DEVICE_IMU:
+        imu_parsing();
         break;
     case DEVICE_EXTERNAL_ATMOSPHERE:
         env_parsing();
@@ -578,6 +585,10 @@ void Link::env_parsing()
     }
     else;
 
+    temperature_C_prev = External_atmosphere_data.temperature_C;
+    depth_m_prev = External_atmosphere_data.depth_m;
+    pressure_mbar_prev = External_atmosphere_data.pressure_mbar;
+
 
 }
 void Link::error_parsing()
@@ -709,6 +720,137 @@ void Link::sonar_parsing()
     setSonarRange(sonar_data.range_m);
     setSonarConfidence(sonar_data.confidence);
 }
+
+void Link::imu_parsing()
+{
+    try
+    {
+    temperature_imuC = IMU_data.temperature_C;
+    systemcalibration = IMU_data.systemcalibration;
+    gyrocalibration = IMU_data.gyrocalibration;
+    accelerometercalibration = IMU_data.accelerometercalibration;
+    magnetometercalibration = IMU_data.magnetometercalibration;
+    uptime_ms_imu = IMU_data.uptime_ms;
+    if (qIsNaN(IMU_data.magnetometercalibration)) {
+        throw std::runtime_error("NaN detected in IMU magnetometer calibration");
+    }
+    if (qIsNaN(IMU_data.accelerometercalibration)) {
+        throw std::runtime_error("NaN detected in IMU accelerometer calibration");
+    }
+    if (qIsNaN(IMU_data.gyrocalibration)) {
+        throw std::runtime_error("NaN detected in IMU gyro calibration");
+    }
+    if (qIsNaN(IMU_data.systemcalibration)) {
+        throw std::runtime_error("NaN detected in IMU system calibration");
+    }
+    if (qIsNaN(IMU_data.uptime_ms)) {
+        throw std::runtime_error("NaN detected in IMU uptime ");
+    }
+    if (qIsNaN(IMU_data.temperature_C)) {
+        throw std::runtime_error("NaN detected in IMU Temperature");
+    }
+
+    if (IMU_data.temperature_C == std::numeric_limits<double>::infinity() || IMU_data.temperature_C == -std::numeric_limits<double>::infinity()) {
+        throw std::overflow_error("Floating point overflow occurred.");
+    }
+
+    if (IMU_data.systemcalibration > std::numeric_limits<int>::max() || IMU_data.systemcalibration <std::numeric_limits<int>::min()) {
+        throw std::overflow_error("Integer overflow: value is out of range for int");
+    }
+
+    if (IMU_data.gyrocalibration > std::numeric_limits<int>::max() || IMU_data.gyrocalibration <std::numeric_limits<int>::min()) {
+        throw std::overflow_error("Integer overflow: value is out of range for int");
+    }
+
+    if (IMU_data.accelerometercalibration > std::numeric_limits<int>::max() || IMU_data.accelerometercalibration <std::numeric_limits<int>::min()) {
+        throw std::overflow_error("Integer overflow: value is out of range for int");
+    }
+
+    if (IMU_data.magnetometercalibration > std::numeric_limits<int>::max() || IMU_data.magnetometercalibration <std::numeric_limits<int>::min()) {
+        throw std::overflow_error("Integer overflow: value is out of range for int");
+    }
+
+    if (IMU_data.uptime_ms > std::numeric_limits<int>::max() || IMU_data.uptime_ms <std::numeric_limits<int>::min()) {
+        throw std::overflow_error("Integer overflow: value is out of range for int");
+    }
+
+    }
+    catch (const std::out_of_range& e) {
+        std::cerr << "Index out of range error:" << e.what()<< std::endl;
+    }
+    catch (const std::overflow_error& e) {
+        std::cerr << "Caught overflow: " << e.what() << std::endl;
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << "Invalid argument:" << e.what() << std::endl;
+    }
+    catch (const std::logic_error& e) {
+        std::cerr << "Logic error:" << e.what() << std::endl;
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << "Runtime error:" << e.what() << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr<<"Error:"<<&e << std::endl;
+    }
+    catch(...)
+    {
+        std::cerr<<"Error Unkown" << std::endl;
+
+    }
+
+    /*temperature_imuC = IMU_data.temperature_C;
+    temperature_imuC = IMU_data.temperature_C;
+    temperature_imuC = IMU_data.temperature_C;
+    temperature_imuC = IMU_data.temperature_C;*/
+    set_imu_temp(IMU_data.temperature_C);
+    set_imu_accelerometer(IMU_data.accelerometercalibration);
+    set_imu_gyro(IMU_data.gyrocalibration);
+    set_imu_magnetometer(IMU_data.magnetometercalibration);
+    set_imu_system(IMU_data.systemcalibration);
+    set_imu_uptime(IMU_data.uptime_ms);
+
+    imu_array.clear();
+    imu_array.append(temperature_imuC);
+    imu_array.append(systemcalibration);
+    imu_array.append(gyrocalibration);
+    imu_array.append(accelerometercalibration);
+    imu_array.append(magnetometercalibration);
+    imu_array.append(uptime_ms_imu);
+    imu_array.append(IMU_data.acceleration[0]);
+    imu_array.append(IMU_data.acceleration[1]);
+    imu_array.append(IMU_data.acceleration[2]);
+    imu_array.append(IMU_data.gyro[0]);
+    imu_array.append(IMU_data.gyro[1]);
+    imu_array.append(IMU_data.gyro[2]);
+    imu_array.append(IMU_data.magnetic[0]);
+    imu_array.append(IMU_data.magnetic[1]);
+    imu_array.append(IMU_data.magnetic[2]);
+    imu_array.append(IMU_data.rotationvector[0]);
+    imu_array.append(IMU_data.rotationvector[1]);
+    imu_array.append(IMU_data.rotationvector[2]);
+    imu_array.append(IMU_data.linearacceleration[0]);
+    imu_array.append(IMU_data.linearacceleration[1]);
+    imu_array.append(IMU_data.linearacceleration[2]);
+    imu_array.append(IMU_data.gravity[0]);
+    imu_array.append(IMU_data.gravity[1]);
+    imu_array.append(IMU_data.gravity[2]);
+    emit imu_updated();
+    if(File.isOpen())
+    {
+        QMutexLocker locker(&mutex18);
+        //twoDArray.append(title_element3);
+        formattedTimeMsg.clear();
+        date = QDateTime::currentDateTime();
+        formattedTime = date.toString("dd.MM.yyyy,hh:mm:ss");
+        formattedTimeMsg = formattedTime.toLocal8Bit();
+        twoDArray.append(QString(formattedTimeMsg) + "," +QString::number(DEVICE_IMU) +","+ QString::number(IMU_data.temperature_C) +","+QString::number(IMU_data.magnetometercalibration)+"," +QString::number(IMU_data.accelerometercalibration) +"," +QString::number(IMU_data.systemcalibration) +"," +QString::number(IMU_data.gyrocalibration) +"," +QString::number(IMU_data.acceleration[0]) +"," +QString::number(IMU_data.acceleration[1]) +"," +QString::number(IMU_data.acceleration[2]) +"," +QString::number(IMU_data.gyro[0]) +"," +QString::number(IMU_data.gyro[1]) +"," +QString::number(IMU_data.gyro[2]) +"," +QString::number(IMU_data.magnetic[0]) +"," +QString::number(IMU_data.magnetic[1]) +"," +QString::number(IMU_data.magnetic[2]) +"," +QString::number(IMU_data.linearacceleration[0]) +"," +QString::number(IMU_data.linearacceleration[1]) +"," +QString::number(IMU_data.linearacceleration[2]) +"," +QString::number(IMU_data.rotationvector[0]) +"," +QString::number(IMU_data.rotationvector[1]) +"," +QString::number(IMU_data.rotationvector[2]) +"," +QString::number(IMU_data.gravity[0]) +"," +QString::number(IMU_data.gravity[1]) +"," +QString::number(IMU_data.gravity[2])+"," +QString::number(IMU_data.uptime_ms) +","+"\n\n");
+        array_size++;
+        writing_done=false;
+        save_short();
+    }
+
+}
 void Link::command_parsing()
 {
     setCommand(acknowledgement_data.command);
@@ -807,6 +949,37 @@ QString Link:: messageValue() const
 quint64 Link:: uptimeMsAck() const
 {
     return uptime_ms_ack;
+}
+
+float Link::imu_temperature() const
+{
+    return temperature_imuC;
+}
+
+uint8_t Link::imu_system() const
+{
+    return temperature_imuC;
+
+}
+
+uint8_t Link::imu_accelerometer() const
+{
+    return accelerometercalibration;
+}
+
+uint8_t Link::imu_gyro() const
+{
+    return gyrocalibration;
+}
+
+uint8_t Link::imu_magnetometer() const
+{
+    return magnetometercalibration;
+}
+
+uint32_t Link::imu_uptime() const
+{
+    return uptime_ms_imu;
 }
 
 void Link::save_short()
@@ -1325,6 +1498,54 @@ QVariantList Link::errorcatched()
     }
     return errorArray;
 }
+
+QVariantList Link::imu_data()
+{
+    return imu_array;
+}
+
+void Link::set_imu_temp(float value)
+{
+    temperature_imuC = value;
+}
+
+void Link::set_imu_uptime(uint32_t value)
+{
+    uptime_ms_imu = value;
+}
+
+void Link::set_imu_magnetometer(uint8_t value)
+{
+    magnetometercalibration = value;
+}
+
+void Link::set_imu_accelerometer(uint8_t value)
+{
+    accelerometercalibration = value;
+}
+
+void Link::set_imu_gyro(uint8_t value)
+{
+    gyrocalibration = value;
+}
+
+void Link::set_imu_system(uint8_t value)
+{
+    systemcalibration = value;
+
+}
+
+void Link::check_env()
+{
+    if(qFuzzyCompare(External_atmosphere_data.temperature_C, 0.0f) && qFuzzyCompare(External_atmosphere_data.pressure_mbar,0.0f) && qFuzzyCompare(External_atmosphere_data.depth_m,-10.0f) || qAbs(temperature_C_prev-External_atmosphere_data.temperature_C)>10.0f || qAbs(pressure_mbar_prev-External_atmosphere_data.pressure_mbar)>900.0f || qAbs(depth_m_prev-External_atmosphere_data.depth_m)>5.0f)
+    {
+        settemperature(0.0f);
+        setdepth(0.0f);
+        setsalinity(0.0f);
+    }
+    else;
+}
+
 void Link::login(QString username, QString password)
 {
     COMMAND_Packet cmd{};
@@ -1347,4 +1568,6 @@ void Link::login(QString username, QString password)
         QByteArray(reinterpret_cast<char*>(&vedtp),
                    sizeof(VEDTP_Main))
         );//cmd.param[0]=static_cast<>
+
+    //qDebug()<<"Hello";
 }
